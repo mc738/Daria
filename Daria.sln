@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Minx.Razor", "..\Minx\Minx.
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Daria.Console", "Daria.Console\Daria.Console.fsproj", "{237055B0-45AF-439A-A89F-65948D432B60}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FDOM.Rendering", "FDOM.Rendering\FDOM.Rendering.fsproj", "{1E911844-4E10-4775-8EEC-45AD1936F47A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{237055B0-45AF-439A-A89F-65948D432B60}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{237055B0-45AF-439A-A89F-65948D432B60}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{237055B0-45AF-439A-A89F-65948D432B60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E911844-4E10-4775-8EEC-45AD1936F47A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E911844-4E10-4775-8EEC-45AD1936F47A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E911844-4E10-4775-8EEC-45AD1936F47A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E911844-4E10-4775-8EEC-45AD1936F47A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -6,7 +6,7 @@ open System.Net.Mime
 module DOM =
 
     type Style =
-        | Ref of string
+        | Ref of string list
         | Custom of Map<string, string>
         | Default
 
@@ -41,7 +41,7 @@ module DOM =
 
     /// A list item.
     /// List items content as `sub sections` and as such can contain blocks.
-    and ListItem = { Style: Style; Content: BlockContent }
+    and ListItem = { Style: Style; Content: InlineContent list }
 
     and ImageBlock = { Source: ImageSource; Style: Style }
 
@@ -62,9 +62,9 @@ module DOM =
         | Spans of InlineSpan list
 
 
-    and Block =
-        | Block of BlockContent
-        | Inline of InlineContent list
+    //and Block =
+    //    | Block of BlockContent
+    //    | Inline of InlineContent list
 
     and Section =
         { Style: Style
@@ -127,7 +127,6 @@ module DOM =
 
 
     let createText text = InlineContent.Text { Content = text }
-
 
     let createSpan style text = { Style = style; Content = text }
 
