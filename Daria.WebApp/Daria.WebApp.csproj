@@ -22,5 +22,9 @@
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0-*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FDOM.Razor\FDOM.Razor.fsproj" />
+  </ItemGroup>
+
 
 </Project>

@@ -1,7 +1,42 @@
 ﻿@page "/"
+@using FDOM.Core.Common
+@using FDOM.Core
 
 <h1>Hello, world!</h1>
 
 Welcome to your new app.
 
 <SurveyPrompt Title="How is Blazor working for you?" />
+
+@if (renderedArticle != null)
+{
+    @renderedArticle
+}
+
+
+
+@code {
+    
+    private RenderFragment renderedArticle;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //var data = await articlesService.GetArticle(Reference);
+
+        //BackgroundImage = $"background-image: url(\"{ data.Image }\")";
+
+        //var json = System.IO.File.ReadAllText(data.Path + "/article.json");
+
+        //var doc = System.Text.Json.JsonSerializer.Deserialize<Document>(json);
+
+        //article = new DOM(doc);
+
+        RenderDocument();
+
+    }
+    
+    void RenderDocument()
+    {
+        renderedArticle = Rendered.Render(TestDoc.Test.Get);
+    }  
+}

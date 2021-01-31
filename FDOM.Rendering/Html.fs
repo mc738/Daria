@@ -3,14 +3,16 @@ module FDOM.Rendering.Html
 
 open FDOM.Core.Common
 
+type Layout = { Head: string; Foot: string }
+
 // TODO move to FUtils
 let private join separator (values: string seq) = System.String.Join(separator, values)
 
 /// Infix join.
 /// Example:
 /// let str = [ "1"; "2"; "3" ] +> ", "
-/// str = "1, 2, 3" 
-let (+>) (items: string list) separator  = join separator items
+/// str = "1, 2, 3"
+let (+>) (items: string list) separator = join separator items
 
 [<AutoOpen>]
 module private Utils =
@@ -34,7 +36,8 @@ module private Utils =
 module private Inline =
     let renderText (text: DOM.InlineText) = text.Content
 
-    let renderSpan (span: DOM.InlineSpan) = sprintf "<span%s>%s</span>" (renderStyle span.Style) span.Content
+    let renderSpan (span: DOM.InlineSpan) =
+        sprintf "<span%s>%s</span>" (renderStyle span.Style) span.Content
 
     let renderSpans (spans: DOM.InlineSpan list) = (spans |> List.map renderSpan) +> ""
 
@@ -43,7 +46,8 @@ module private Inline =
         | DOM.Text t -> renderText t
         | DOM.Spans s -> renderSpans s
 
-    let renderInlineItems (items: DOM.InlineContent list) = (items |> List.map renderInlineContent) +> ""
+    let renderInlineItems (items: DOM.InlineContent list) =
+        (items |> List.map renderInlineContent) +> ""
 
 [<AutoOpen>]
 module private Blocks =
@@ -73,7 +77,8 @@ module private Blocks =
             | true -> "ol"
             | false -> "ul"
 
-        let content = (list.Items |> List.map renderListItem) +> ""
+        let content =
+            (list.Items |> List.map renderListItem) +> ""
 
         sprintf "<%s%s>%s</%s>" tag (renderStyle list.Style) content tag
 
@@ -105,7 +110,13 @@ module private Document =
     let renderSection (section: DOM.Section) =
         sprintf """<section%s>%s</section>""" (renderStyle section.Style) (renderBlocks section.Content)
 
-    let renderBody content = (content |> List.map renderSection) +> ""
+    let renderBody layout content =
+        [ layout.Head
+          (content |> List.map renderSection) +> ""
+          layout.Foot ]
+        +> ""
+
+
 
     let renderStylesheetReference reference =
         sprintf """<link href="%s" rel="stylesheet">""" reference
@@ -113,12 +124,17 @@ module private Document =
     let renderScriptReference reference =
         sprintf """<script scr="%s"></script>""" reference
 
-let render (stylesheets: string list) (scriptSources: string list) (document: DOM.Document) =
+let render (layout: Layout) (stylesheets: string list) (scriptSources: string list) (document: DOM.Document) =
 
-    let links = (stylesheets |> List.map renderStylesheetReference) +> ""
+    let links =
+        (stylesheets |> List.map renderStylesheetReference)
+        +> ""
 
-    let scripts = (scriptSources |> List.map renderScriptReference) +> ""
+    let scripts =
+        (scriptSources |> List.map renderScriptReference)
+        +> ""
 
     [ renderHead document.Name links
-      renderBody document.Sections
-      renderFoot scripts ] +> ""
+      renderBody layout document.Sections
+      renderFoot scripts ]
+    +> ""

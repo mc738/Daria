@@ -4,51 +4,28 @@ open System
 open System.IO
 open FDOM.Core.Common
 open FDOM.Rendering
+open FDOM.Core.DSL
 
 let defaultStyle = DOM.Style.Default
 
 let testDoc =
-    
-    let header = DOM.createH1 true defaultStyle [ DOM.createText "Hello, World!" ]
-    
-    let paragraph = DOM.createParagraph defaultStyle [
-        DOM.createSpans [
-            DOM.createSpan defaultStyle "Hello, this is span 1..."
-            DOM.createSpan defaultStyle "...and this is span 2!"
+    document "test-doc" None defaultStyle [
+        section "section-1" None defaultStyle [
+            h1 true (Style.references [ "main-header"; "header" ]) [
+                text "Hello, World!"
+            ]
+            p Style.none [
+                spans [
+                    span Style.none "Hello, this is span 1"
+                    span Style.none "Hello, this is span 2"
+                ]
+            ]
         ]
     ]
-    
-    
-    let section = DOM.createSection defaultStyle None "section-1" [
-        header
-        paragraph
-    ]
-    
-    
-    DOM.createDocument defaultStyle None "test-doc" [
-        section
-    ]
-    
-    
-
 
 [<EntryPoint>]
 let main argv =
     
-    let map = [
-        "", ""
-    ] 
-    
-    let style1 = DOM.Style.Custom (Map.ofList [
-        "font-size", "16px"
-        "color", "blue"
-        "background-color", "green"
-    ])
-
-    let style2 = DOM.Style.Ref [ "block"; "article" ]
-    
-    let style3 = DOM.Style.Default
-   
     let doc = testDoc
     
     let stylesheets = [
@@ -61,7 +38,11 @@ let main argv =
         "js/main.js"
     ]
     
-    let doc = Html.render stylesheets scripts doc
+    let layout = {
+        Head = "<section id=\"sidebar\"><small>Main</small><section><main><small>Main</small>"
+        Foot = "</main>" } : Html.Layout
+    
+    let doc = Html.render layout stylesheets scripts doc
     
     File.WriteAllText("/home/max/Projects/Daria/test.html", doc)
     

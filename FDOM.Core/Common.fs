@@ -41,7 +41,9 @@ module DOM =
 
     /// A list item.
     /// List items content as `sub sections` and as such can contain blocks.
-    and ListItem = { Style: Style; Content: InlineContent list }
+    and ListItem =
+        { Style: Style
+          Content: InlineContent list }
 
     and ImageBlock = { Source: ImageSource; Style: Style }
 
@@ -112,6 +114,8 @@ module DOM =
     let createParagraph style content =
         BlockContent.Paragraph { Style = style; Content = content }
 
+    let createListItem style content: ListItem = { Style = style; Content = content }
+
     let createList ordered style items =
         BlockContent.List
             { Ordered = ordered
@@ -143,3 +147,5 @@ module DOM =
           Title = title
           Name = name
           Sections = sections }
+        
+        

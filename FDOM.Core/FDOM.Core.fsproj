@@ -1,11 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>netstandard2.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
       <Compile Include="Common.fs" />
+      <Compile Include="DSL.fs" />
+      <Compile Include="Interop.fs" />
+      <Compile Include="TestDoc.fs" />
     </ItemGroup>
 
 </Project>
