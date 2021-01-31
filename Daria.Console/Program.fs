@@ -3,6 +3,7 @@
 open System
 open System.IO
 open FDOM.Core.Common
+open FDOM.Core.TestDoc
 open FDOM.Rendering
 open FDOM.Core.DSL
 open FDOM.Core.DSL.General
@@ -43,9 +44,9 @@ let main argv =
         Head = "<section id=\"sidebar\"><small>Main</small><section><main><small>Main</small>"
         Foot = "</main>" } : Html.Layout
     
-    let doc = Html.render layout stylesheets scripts doc
+    let doc = Html.render layout stylesheets scripts Test.Get
     
-    File.WriteAllText("/home/max/Projects/Daria/test.html", doc)
+    File.WriteAllText("/home/max/Data/FDOM_Tests/index.html", doc)
     
     printfn "The doc: %A" doc
     0 // return an integer exit code

@@ -117,7 +117,7 @@ module private Utils =
             
             let tag = match l.Ordered with | true -> "ol" | false -> "ul"
             
-            b.OpenElement(1, "p")
+            b.OpenElement(1, tag)
             
           //  b.AddAttribute(2, attr, style)
             let next = renderStyle l.Style b
