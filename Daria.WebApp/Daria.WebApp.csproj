@@ -23,7 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FDOM.Razor\FDOM.Razor.fsproj" />
+    <ProjectReference Include="..\..\FDOM\FDOM.Core\FDOM.Core.fsproj" />
+    <ProjectReference Include="..\..\FDOM\FDOM.Rendering.Razor\FDOM.Rendering.Razor.fsproj" />
+    <ProjectReference Include="..\Daria.Articles\Daria.Articles.fsproj" />
   </ItemGroup>
 
 

@@ -10,8 +10,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\FDOM\FDOM.Core\FDOM.Core.fsproj" />
+      <ProjectReference Include="..\..\FDOM\FDOM.Rendering.Html\FDOM.Rendering.Html.fsproj" />
+      <ProjectReference Include="..\Daria.Articles\Daria.Articles.fsproj" />
       <ProjectReference Include="..\FDOM.Core\FDOM.Core.fsproj" />
-      <ProjectReference Include="..\FDOM.Rendering\FDOM.Rendering.fsproj" />
     </ItemGroup>
 
 </Project>
