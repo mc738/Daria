@@ -112,7 +112,9 @@ module private Document =
 
     let renderBody layout content =
         [ layout.Head
+          "<article>"
           (content |> List.map renderSection) +> ""
+          "</article>"
           layout.Foot ]
         +> ""
 

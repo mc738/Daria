@@ -5,6 +5,7 @@ open System.IO
 open FDOM.Core.Common
 open FDOM.Rendering
 open FDOM.Core.DSL
+open FDOM.Core.DSL.General
 
 let defaultStyle = DOM.Style.Default
 

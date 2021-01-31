@@ -2,6 +2,7 @@ module FDOM.Core.TestDoc
 
 open FDOM.Core.Common
 open FDOM.Core.DSL
+open FDOM.Core.DSL.General
 
 type Test =
 
