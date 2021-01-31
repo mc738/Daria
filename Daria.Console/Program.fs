@@ -41,7 +41,7 @@ let main argv =
     ]
     
     let layout = {
-        Head = "<section id=\"sidebar\"><small>Main</small><section><main><small>Main</small>"
+        Head = "<section id=\"sidebar\"><small>Main</small></section><main><small>Main</small>"
         Foot = "</main>" } : Html.Layout
     
     let doc = Html.render layout stylesheets scripts Test.Get

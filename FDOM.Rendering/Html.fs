@@ -124,7 +124,7 @@ module private Document =
         sprintf """<link href="%s" rel="stylesheet">""" reference
 
     let renderScriptReference reference =
-        sprintf """<script scr="%s"></script>""" reference
+        sprintf """<script src="%s"></script>""" reference
 
 let render (layout: Layout) (stylesheets: string list) (scriptSources: string list) (document: DOM.Document) =
 
