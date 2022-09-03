@@ -19,7 +19,8 @@ module Common =
             |> List.map (fun c ->
                 match c with
                 | DOM.InlineContent.Text t -> t.Content
-                | DOM.InlineContent.Span s -> s.Content)
+                | DOM.InlineContent.Span s -> s.Content
+                | DOM.InlineContent.Link l -> l.Content)
             |> String.concat ""
 
         let createIssueLink (title: string) =

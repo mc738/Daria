@@ -84,3 +84,20 @@ module DataStore =
                OverrideCssUrl = a.OverrideCssUrl }: Article)
             |> Some
         | _ -> None
+        
+        
+    let getOrderedSeries (ctx: SqliteContext) =
+        Operations.selectSeriesRecords ctx [ "ORDER BY series_number" ] []
+        
+        
+    let getFirstArticle (ctx: SqliteContext) (series: string) =
+        Operations.selectArticleRecord ctx [ "WHERE series = @0"; "ORDER by part_number LIMIT 1" ] [ series ]
+        
+    let getSeriesTags (ctx: SqliteContext) (series: string) =
+        Operations.selectSeriesTagsRecords ctx [ "WHERE series = @0" ] [ series ]
+        
+        
+    let getLatestPosts (ctx: SqliteContext) (count: int) =
+        Operations.selectArticleVersionRecords ctx [ "ORDER BY DATE(publish_date) DESC LIMIT @0" ] [ count ]
+        |> List.map (fun av -> Operations.selectArticleRecord ctx [ "WHERE name = @0" ] [ av.Article ] |> Option.map (fun a -> a, av))
+        |> List.choose id

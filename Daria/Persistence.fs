@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 20/06/2022 21:32:12 (utc) via Freql.Sqlite.Tools.
+/// Module generated on 10/07/2022 22:13:18 (utc) via Freql.Sqlite.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_links`.
@@ -145,7 +145,8 @@ module Records =
           [<JsonPropertyName("previewImageUrl")>] PreviewImageUrl: string
           [<JsonPropertyName("thanks")>] Thanks: string option
           [<JsonPropertyName("rawLink")>] RawLink: string option
-          [<JsonPropertyName("overrideCssUrl")>] OverrideCssUrl: string option }
+          [<JsonPropertyName("overrideCssUrl")>] OverrideCssUrl: string option
+          [<JsonPropertyName("displayImage")>] DisplayImage: string }
     
         static member Blank() =
             { Name = String.Empty
@@ -159,7 +160,8 @@ module Records =
               PreviewImageUrl = String.Empty
               Thanks = None
               RawLink = None
-              OverrideCssUrl = None }
+              OverrideCssUrl = None
+              DisplayImage = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE articles (
@@ -174,7 +176,7 @@ module Records =
 	preview_image_url TEXT NOT NULL,
 	thanks TEXT,
 	raw_link TEXT,
-	override_css_url TEXT,
+	override_css_url TEXT, display_image TEXT DEFAULT TODO NOT NULL,
 	CONSTRAINT articles_PK PRIMARY KEY (name),
 	CONSTRAINT articles_FK FOREIGN KEY (series) REFERENCES series(name)
 )
@@ -193,7 +195,8 @@ module Records =
               preview_image_url,
               thanks,
               raw_link,
-              override_css_url
+              override_css_url,
+              display_image
         FROM articles
         """
     
@@ -232,15 +235,21 @@ module Records =
     /// A record representing a row in the table `series`.
     type Series =
         { [<JsonPropertyName("name")>] Name: string
-          [<JsonPropertyName("nameSlug")>] NameSlug: string }
+          [<JsonPropertyName("nameSlug")>] NameSlug: string
+          [<JsonPropertyName("description")>] Description: string
+          [<JsonPropertyName("seriesNumber")>] SeriesNumber: int64
+          [<JsonPropertyName("displayImage")>] DisplayImage: string }
     
         static member Blank() =
             { Name = String.Empty
-              NameSlug = String.Empty }
+              NameSlug = String.Empty
+              Description = String.Empty
+              SeriesNumber = 0L
+              DisplayImage = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE series (
-	name TEXT NOT NULL, name_slug TEXT NOT NULL,
+	name TEXT NOT NULL, name_slug TEXT NOT NULL, description TEXT DEFAULT TODO NOT NULL, "series_number" INTEGER DEFAULT 999 NOT NULL, display_image TEXT DEFAULT TODO NOT NULL,
 	CONSTRAINT series_PK PRIMARY KEY (name)
 )
         """
@@ -248,11 +257,42 @@ module Records =
         static member SelectSql() = """
         SELECT
               name,
-              name_slug
+              name_slug,
+              description,
+              series_number,
+              display_image
         FROM series
         """
     
         static member TableName() = "series"
+    
+    /// A record representing a row in the table `series_tags`.
+    type SeriesTags =
+        { [<JsonPropertyName("series")>] Series: string
+          [<JsonPropertyName("tag")>] Tag: string }
+    
+        static member Blank() =
+            { Series = String.Empty
+              Tag = String.Empty }
+    
+        static member CreateTableSql() = """
+        CREATE TABLE series_tags (
+	series TEXT NOT NULL,
+	tag TEXT NOT NULL,
+	CONSTRAINT series_tags_PK PRIMARY KEY (series,tag),
+	CONSTRAINT series_tags_FK FOREIGN KEY (series) REFERENCES series(name),
+	CONSTRAINT series_tags_FK_1 FOREIGN KEY (tag) REFERENCES tags(name)
+)
+        """
+    
+        static member SelectSql() = """
+        SELECT
+              series,
+              tag
+        FROM series_tags
+        """
+    
+        static member TableName() = "series_tags"
     
     /// A record representing a row in the table `tags`.
     type Tag =
@@ -277,7 +317,7 @@ module Records =
         static member TableName() = "tags"
     
 
-/// Module generated on 20/06/2022 21:32:12 (utc) via Freql.Tools.
+/// Module generated on 10/07/2022 22:13:18 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_links`.
@@ -341,7 +381,8 @@ module Parameters =
           [<JsonPropertyName("previewImageUrl")>] PreviewImageUrl: string
           [<JsonPropertyName("thanks")>] Thanks: string option
           [<JsonPropertyName("rawLink")>] RawLink: string option
-          [<JsonPropertyName("overrideCssUrl")>] OverrideCssUrl: string option }
+          [<JsonPropertyName("overrideCssUrl")>] OverrideCssUrl: string option
+          [<JsonPropertyName("displayImage")>] DisplayImage: string }
     
         static member Blank() =
             { Name = String.Empty
@@ -355,7 +396,8 @@ module Parameters =
               PreviewImageUrl = String.Empty
               Thanks = None
               RawLink = None
-              OverrideCssUrl = None }
+              OverrideCssUrl = None
+              DisplayImage = String.Empty }
     
     
     /// A record representing a new row in the table `resources`.
@@ -373,11 +415,27 @@ module Parameters =
     /// A record representing a new row in the table `series`.
     type NewSeries =
         { [<JsonPropertyName("name")>] Name: string
-          [<JsonPropertyName("nameSlug")>] NameSlug: string }
+          [<JsonPropertyName("nameSlug")>] NameSlug: string
+          [<JsonPropertyName("description")>] Description: string
+          [<JsonPropertyName("seriesNumber")>] SeriesNumber: int64
+          [<JsonPropertyName("displayImage")>] DisplayImage: string }
     
         static member Blank() =
             { Name = String.Empty
-              NameSlug = String.Empty }
+              NameSlug = String.Empty
+              Description = String.Empty
+              SeriesNumber = 0L
+              DisplayImage = String.Empty }
+    
+    
+    /// A record representing a new row in the table `series_tags`.
+    type NewSeriesTags =
+        { [<JsonPropertyName("series")>] Series: string
+          [<JsonPropertyName("tag")>] Tag: string }
+    
+        static member Blank() =
+            { Series = String.Empty
+              Tag = String.Empty }
     
     
     /// A record representing a new row in the table `tags`.
@@ -388,7 +446,7 @@ module Parameters =
             { Name = String.Empty }
     
     
-/// Module generated on 20/06/2022 21:32:12 (utc) via Freql.Tools.
+/// Module generated on 10/07/2022 22:13:18 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
@@ -561,6 +619,30 @@ module Operations =
     
     let insertSeries (context: SqliteContext) (parameters: Parameters.NewSeries) =
         context.Insert("series", parameters)
+    
+    /// Select a `Records.SeriesTags` from the table `series_tags`.
+    /// Internally this calls `context.SelectSingleAnon<Records.SeriesTags>` and uses Records.SeriesTags.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectSeriesTagsRecord ctx "WHERE `field` = @0" [ box `value` ]
+    let selectSeriesTagsRecord (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.SeriesTags.SelectSql() ] @ query |> buildSql
+        context.SelectSingleAnon<Records.SeriesTags>(sql, parameters)
+    
+    /// Internally this calls `context.SelectAnon<Records.SeriesTags>` and uses Records.SeriesTags.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectSeriesTagsRecords ctx "WHERE `field` = @0" [ box `value` ]
+    let selectSeriesTagsRecords (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.SeriesTags.SelectSql() ] @ query |> buildSql
+        context.SelectAnon<Records.SeriesTags>(sql, parameters)
+    
+    let insertSeriesTags (context: SqliteContext) (parameters: Parameters.NewSeriesTags) =
+        context.Insert("series_tags", parameters)
     
     /// Select a `Records.Tag` from the table `tags`.
     /// Internally this calls `context.SelectSingleAnon<Records.Tag>` and uses Records.Tag.SelectSql().
