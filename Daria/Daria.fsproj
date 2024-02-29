@@ -10,13 +10,15 @@
         <Compile Include="V1\Common.fs" />
         <Compile Include="V1\DataStore.fs" />
         <Compile Include="V1\PageBuilder.fs" />
+        <Compile Include="V2\PageBuilder.fs" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FDOM.Core" Version="0.2.0" />
-      <PackageReference Include="FDOM.Rendering.Html" Version="0.2.0" />
-      <PackageReference Include="Fluff.Core" Version="0.3.0" />
-      <PackageReference Include="Freql.Sqlite" Version="0.5.1" />
+      <PackageReference Include="FDOM.Core" Version="0.4.0" />
+      <PackageReference Include="FDOM.Rendering.Html" Version="0.4.0" />
+      <PackageReference Include="Fluff.Core" Version="0.4.0" />
+      <PackageReference Include="Freql.Sqlite" Version="0.10.0" />
+      <PackageReference Include="FsToolbox" Version="0.6.0" />
     </ItemGroup>
 
 </Project>
