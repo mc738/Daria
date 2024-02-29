@@ -1,4 +1,4 @@
-namespace Daria.Persistence
+namespace Daria.V1.Persistence
 
 open System
 open System.Text.Json.Serialization
