@@ -1,4 +1,4 @@
-﻿namespace Daria
+﻿namespace Daria.V1
 
 open System
 open Daria
@@ -26,8 +26,6 @@ module Common =
         let createIssueLink (title: string) =
             title.Replace(" ", "+").Replace("#", "%23")
             |> fun s -> $"https://github.com/mc738/Articles/issues/new?title=`{s}`+issue"
-
-
 
     type ShareLinkType =
         | Facebook
