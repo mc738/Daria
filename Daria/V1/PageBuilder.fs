@@ -1,6 +1,6 @@
-﻿namespace Daria
+﻿namespace Daria.V1
 
-open Daria.Persistence
+open Daria.V1.Persistence
 open Fluff.Core
 open Freql.Sqlite
 
