@@ -1,4 +1,4 @@
-﻿namespace Daria
+﻿namespace Daria.V1
 
 open System
 open System.Text
@@ -8,7 +8,7 @@ open Freql.Sqlite
 
 module DataStore =
 
-    open Daria.Persistence
+    open Daria.V1.Persistence
 
     let getContent (blob: BlobField) =
         blob.ToBytes()
