@@ -1,7 +1,7 @@
 ﻿open System
 open System.IO
 open System.Text.Json.Serialization
-open Daria
+open Daria.V1
 open FDOM.Core.Common
 open FDOM.Core.Dsl
 open FDOM.Core.Parsing

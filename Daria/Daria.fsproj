@@ -6,11 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Library.fs" />
-        <Compile Include="Persistence.fs" />
-        <Compile Include="Common.fs" />
-        <Compile Include="DataStore.fs" />
-        <Compile Include="PageBuilder.fs" />
+        <Compile Include="V1\Persistence.fs" />
+        <Compile Include="V1\Common.fs" />
+        <Compile Include="V1\DataStore.fs" />
+        <Compile Include="V1\PageBuilder.fs" />
     </ItemGroup>
 
     <ItemGroup>
