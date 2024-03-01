@@ -10,8 +10,8 @@
         <Compile Include="V1\Common.fs" />
         <Compile Include="V1\DataStore.fs" />
         <Compile Include="V1\PageBuilder.fs" />
-        <Compile Include="V2\PageBuilder.fs" />
         <Compile Include="V2\Persistence.fs" />
+        <Compile Include="V2\PageBuilder.fs" />
     </ItemGroup>
 
     <ItemGroup>
