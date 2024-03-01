@@ -81,9 +81,6 @@ module Common =
         static member Create(lines: string list) =
             let blocks =
                 Parser.ParseLines(lines).CreateBlockContent()
-
-            Parser.
-            
             
             let (titleBlock, descriptionBlock, content) =
                 blocks.[0], blocks.[1], blocks.[2..]
