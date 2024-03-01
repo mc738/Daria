@@ -14,6 +14,7 @@
         <Compile Include="V2\Common.fs" />
         <Compile Include="V2\DataStore.fs" />
         <Compile Include="V2\PageBuilder.fs" />
+        <Compile Include="V2\IO.fs" />
     </ItemGroup>
 
     <ItemGroup>
