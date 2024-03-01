@@ -13,6 +13,7 @@
         <Compile Include="V2\Persistence.fs" />
         <Compile Include="V2\Common.fs" />
         <Compile Include="V2\PageBuilder.fs" />
+        <Compile Include="V2\DataStore.fs" />
     </ItemGroup>
 
     <ItemGroup>
