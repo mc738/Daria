@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 02/03/2024 13:21:52 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 13:26:04 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -49,28 +49,28 @@ module Records =
     
     /// A record representing a row in the table `article_version_metadata`.
     type ArticleVersionMetadataItem =
-        { [<JsonPropertyName("articleVerionsId")>] ArticleVerionsId: string
+        { [<JsonPropertyName("articleVersionId")>] ArticleVersionId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
           [<JsonPropertyName("itemValue")>] ItemValue: decimal }
     
         static member Blank() =
-            { ArticleVerionsId = String.Empty
+            { ArticleVersionId = String.Empty
               ItemKey = String.Empty
               ItemValue = 0m }
     
         static member CreateTableSql() = """
         CREATE TABLE article_version_metadata (
-	article_verions_id TEXT NOT NULL,
+	article_version_id TEXT NOT NULL,
 	item_key TEXT NOT NULL,
 	item_value TEXT NOT NULL,
-	CONSTRAINT article_version_metadata_PK PRIMARY KEY (article_verions_id,item_key),
-	CONSTRAINT article_version_metadata_FK FOREIGN KEY (article_verions_id) REFERENCES article_versions(id)
+	CONSTRAINT article_version_metadata_PK PRIMARY KEY (article_version_id,item_key),
+	CONSTRAINT article_version_metadata_FK FOREIGN KEY (article_version_id) REFERENCES article_versions(id)
 )
         """
     
         static member SelectSql() = """
         SELECT
-              article_version_metadata.`article_verions_id`,
+              article_version_metadata.`article_version_id`,
               article_version_metadata.`item_key`,
               article_version_metadata.`item_value`
         FROM article_version_metadata
@@ -230,6 +230,37 @@ module Records =
     
         static member TableName() = "articles"
     
+    /// A record representing a row in the table `artifact_metadata`.
+    type ArtifactMetadataItem =
+        { [<JsonPropertyName("artifactId")>] ArtifactId: string
+          [<JsonPropertyName("itemKey")>] ItemKey: string
+          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+    
+        static member Blank() =
+            { ArtifactId = String.Empty
+              ItemKey = String.Empty
+              ItemValue = 0m }
+    
+        static member CreateTableSql() = """
+        CREATE TABLE artifact_metadata (
+	artifact_id TEXT NOT NULL,
+	item_key TEXT NOT NULL,
+	item_value TEXT NOT NULL,
+	CONSTRAINT artifact_metadata_PK PRIMARY KEY (artifact_id,item_key),
+	CONSTRAINT artifact_metadata_FK FOREIGN KEY (artifact_id) REFERENCES artifacts(id)
+)
+        """
+    
+        static member SelectSql() = """
+        SELECT
+              artifact_metadata.`artifact_id`,
+              artifact_metadata.`item_key`,
+              artifact_metadata.`item_value`
+        FROM artifact_metadata
+        """
+    
+        static member TableName() = "artifact_metadata"
+    
     /// A record representing a row in the table `artifacts`.
     type Artifact =
         { [<JsonPropertyName("id")>] Id: string
@@ -268,37 +299,6 @@ module Records =
         """
     
         static member TableName() = "artifacts"
-    
-    /// A record representing a row in the table `artificat_metadata`.
-    type ArtificatMetadata =
-        { [<JsonPropertyName("artifactId")>] ArtifactId: string
-          [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
-    
-        static member Blank() =
-            { ArtifactId = String.Empty
-              ItemKey = String.Empty
-              ItemValue = 0m }
-    
-        static member CreateTableSql() = """
-        CREATE TABLE artificat_metadata (
-	artifact_id TEXT NOT NULL,
-	item_key TEXT NOT NULL,
-	item_value TEXT NOT NULL,
-	CONSTRAINT artificat_metadata_PK PRIMARY KEY (artifact_id,item_key),
-	CONSTRAINT artificat_metadata_FK FOREIGN KEY (artifact_id) REFERENCES artifacts(id)
-)
-        """
-    
-        static member SelectSql() = """
-        SELECT
-              artificat_metadata.`artifact_id`,
-              artificat_metadata.`item_key`,
-              artificat_metadata.`item_value`
-        FROM artificat_metadata
-        """
-    
-        static member TableName() = "artificat_metadata"
     
     /// A record representing a row in the table `compression_type`.
     type CompressionType =
@@ -704,7 +704,7 @@ module Records =
     
         static member TableName() = "series_versions"
     
-    /// A record representing a row in the table `setting_key_value`.
+    /// A record representing a row in the table `setting_key_values`.
     type SettingKeyValue =
         { [<JsonPropertyName("itemKey")>] ItemKey: string
           [<JsonPropertyName("itemValue")>] ItemValue: decimal }
@@ -714,21 +714,21 @@ module Records =
               ItemValue = 0m }
     
         static member CreateTableSql() = """
-        CREATE TABLE setting_key_value (
+        CREATE TABLE setting_key_values (
 	item_key TEXT NOT NULL,
 	item_value TEXT NOT NULL,
-	CONSTRAINT setting_key_value_PK PRIMARY KEY (item_key)
+	CONSTRAINT setting_key_values_PK PRIMARY KEY (item_key)
 )
         """
     
         static member SelectSql() = """
         SELECT
-              setting_key_value.`item_key`,
-              setting_key_value.`item_value`
-        FROM setting_key_value
+              setting_key_values.`item_key`,
+              setting_key_values.`item_value`
+        FROM setting_key_values
         """
     
-        static member TableName() = "setting_key_value"
+        static member TableName() = "setting_key_values"
     
     /// A record representing a row in the table `tags`.
     type Tag =
@@ -819,7 +819,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 02/03/2024 13:21:52 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 13:26:04 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -840,12 +840,12 @@ module Parameters =
     
     /// A record representing a new row in the table `article_version_metadata`.
     type NewArticleVersionMetadataItem =
-        { [<JsonPropertyName("articleVerionsId")>] ArticleVerionsId: string
+        { [<JsonPropertyName("articleVersionId")>] ArticleVersionId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
           [<JsonPropertyName("itemValue")>] ItemValue: decimal }
     
         static member Blank() =
-            { ArticleVerionsId = String.Empty
+            { ArticleVersionId = String.Empty
               ItemKey = String.Empty
               ItemValue = 0m }
     
@@ -914,6 +914,18 @@ module Parameters =
               Active = true }
     
     
+    /// A record representing a new row in the table `artifact_metadata`.
+    type NewArtifactMetadataItem =
+        { [<JsonPropertyName("artifactId")>] ArtifactId: string
+          [<JsonPropertyName("itemKey")>] ItemKey: string
+          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+    
+        static member Blank() =
+            { ArtifactId = String.Empty
+              ItemKey = String.Empty
+              ItemValue = 0m }
+    
+    
     /// A record representing a new row in the table `artifacts`.
     type NewArtifact =
         { [<JsonPropertyName("id")>] Id: string
@@ -928,18 +940,6 @@ module Parameters =
               Description = None
               ResourceVersionId = String.Empty
               CreatedOn = DateTime.UtcNow }
-    
-    
-    /// A record representing a new row in the table `artificat_metadata`.
-    type NewArtificatMetadata =
-        { [<JsonPropertyName("artifactId")>] ArtifactId: string
-          [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
-    
-        static member Blank() =
-            { ArtifactId = String.Empty
-              ItemKey = String.Empty
-              ItemValue = 0m }
     
     
     /// A record representing a new row in the table `compression_type`.
@@ -1104,7 +1104,7 @@ module Parameters =
               Draft = 0L }
     
     
-    /// A record representing a new row in the table `setting_key_value`.
+    /// A record representing a new row in the table `setting_key_values`.
     type NewSettingKeyValue =
         { [<JsonPropertyName("itemKey")>] ItemKey: string
           [<JsonPropertyName("itemValue")>] ItemValue: decimal }
@@ -1148,7 +1148,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 02/03/2024 13:21:52 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 13:26:04 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
@@ -1274,6 +1274,30 @@ module Operations =
     let insertArticle (context: SqliteContext) (parameters: Parameters.NewArticle) =
         context.Insert("articles", parameters)
     
+    /// Select a `Records.ArtifactMetadataItem` from the table `artifact_metadata`.
+    /// Internally this calls `context.SelectSingleAnon<Records.ArtifactMetadataItem>` and uses Records.ArtifactMetadataItem.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectArtifactMetadataItemRecord ctx "WHERE `field` = @0" [ box `value` ]
+    let selectArtifactMetadataItemRecord (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.ArtifactMetadataItem.SelectSql() ] @ query |> buildSql
+        context.SelectSingleAnon<Records.ArtifactMetadataItem>(sql, parameters)
+    
+    /// Internally this calls `context.SelectAnon<Records.ArtifactMetadataItem>` and uses Records.ArtifactMetadataItem.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectArtifactMetadataItemRecords ctx "WHERE `field` = @0" [ box `value` ]
+    let selectArtifactMetadataItemRecords (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.ArtifactMetadataItem.SelectSql() ] @ query |> buildSql
+        context.SelectAnon<Records.ArtifactMetadataItem>(sql, parameters)
+    
+    let insertArtifactMetadataItem (context: SqliteContext) (parameters: Parameters.NewArtifactMetadataItem) =
+        context.Insert("artifact_metadata", parameters)
+    
     /// Select a `Records.Artifact` from the table `artifacts`.
     /// Internally this calls `context.SelectSingleAnon<Records.Artifact>` and uses Records.Artifact.SelectSql().
     /// The caller can provide extra string lines to create a query and boxed parameters.
@@ -1297,30 +1321,6 @@ module Operations =
     
     let insertArtifact (context: SqliteContext) (parameters: Parameters.NewArtifact) =
         context.Insert("artifacts", parameters)
-    
-    /// Select a `Records.ArtificatMetadata` from the table `artificat_metadata`.
-    /// Internally this calls `context.SelectSingleAnon<Records.ArtificatMetadata>` and uses Records.ArtificatMetadata.SelectSql().
-    /// The caller can provide extra string lines to create a query and boxed parameters.
-    /// It is up to the caller to verify the sql and parameters are correct,
-    /// this should be considered an internal function (not exposed in public APIs).
-    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
-    /// Example: selectArtificatMetadataRecord ctx "WHERE `field` = @0" [ box `value` ]
-    let selectArtificatMetadataRecord (context: SqliteContext) (query: string list) (parameters: obj list) =
-        let sql = [ Records.ArtificatMetadata.SelectSql() ] @ query |> buildSql
-        context.SelectSingleAnon<Records.ArtificatMetadata>(sql, parameters)
-    
-    /// Internally this calls `context.SelectAnon<Records.ArtificatMetadata>` and uses Records.ArtificatMetadata.SelectSql().
-    /// The caller can provide extra string lines to create a query and boxed parameters.
-    /// It is up to the caller to verify the sql and parameters are correct,
-    /// this should be considered an internal function (not exposed in public APIs).
-    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
-    /// Example: selectArtificatMetadataRecords ctx "WHERE `field` = @0" [ box `value` ]
-    let selectArtificatMetadataRecords (context: SqliteContext) (query: string list) (parameters: obj list) =
-        let sql = [ Records.ArtificatMetadata.SelectSql() ] @ query |> buildSql
-        context.SelectAnon<Records.ArtificatMetadata>(sql, parameters)
-    
-    let insertArtificatMetadata (context: SqliteContext) (parameters: Parameters.NewArtificatMetadata) =
-        context.Insert("artificat_metadata", parameters)
     
     /// Select a `Records.CompressionType` from the table `compression_type`.
     /// Internally this calls `context.SelectSingleAnon<Records.CompressionType>` and uses Records.CompressionType.SelectSql().
@@ -1586,7 +1586,7 @@ module Operations =
     let insertSeriesVersion (context: SqliteContext) (parameters: Parameters.NewSeriesVersion) =
         context.Insert("series_versions", parameters)
     
-    /// Select a `Records.SettingKeyValue` from the table `setting_key_value`.
+    /// Select a `Records.SettingKeyValue` from the table `setting_key_values`.
     /// Internally this calls `context.SelectSingleAnon<Records.SettingKeyValue>` and uses Records.SettingKeyValue.SelectSql().
     /// The caller can provide extra string lines to create a query and boxed parameters.
     /// It is up to the caller to verify the sql and parameters are correct,
@@ -1608,7 +1608,7 @@ module Operations =
         context.SelectAnon<Records.SettingKeyValue>(sql, parameters)
     
     let insertSettingKeyValue (context: SqliteContext) (parameters: Parameters.NewSettingKeyValue) =
-        context.Insert("setting_key_value", parameters)
+        context.Insert("setting_key_values", parameters)
     
     /// Select a `Records.Tag` from the table `tags`.
     /// Internally this calls `context.SelectSingleAnon<Records.Tag>` and uses Records.Tag.SelectSql().
