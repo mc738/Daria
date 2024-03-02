@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 02/03/2024 15:32:03 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 15:34:26 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -449,6 +449,32 @@ module Records =
     
         static member TableName() = "imagine_versions"
     
+    /// A record representing a row in the table `metadata`.
+    type MetadataItem =
+        { [<JsonPropertyName("itemKey")>] ItemKey: string
+          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+    
+        static member Blank() =
+            { ItemKey = String.Empty
+              ItemValue = 0m }
+    
+        static member CreateTableSql() = """
+        CREATE TABLE metadata (
+	item_key TEXT NOT NULL,
+	item_value TEXT NOT NULL,
+	CONSTRAINT metadata_PK PRIMARY KEY (item_key)
+)
+        """
+    
+        static member SelectSql() = """
+        SELECT
+              metadata.`item_key`,
+              metadata.`item_value`
+        FROM metadata
+        """
+    
+        static member TableName() = "metadata"
+    
     /// A record representing a row in the table `resource_versions`.
     type ResourceVersion =
         { [<JsonPropertyName("id")>] Id: string
@@ -819,7 +845,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 02/03/2024 15:32:03 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 15:34:26 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -1000,6 +1026,16 @@ module Parameters =
               PreviewUrl = None }
     
     
+    /// A record representing a new row in the table `metadata`.
+    type NewMetadataItem =
+        { [<JsonPropertyName("itemKey")>] ItemKey: string
+          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+    
+        static member Blank() =
+            { ItemKey = String.Empty
+              ItemValue = 0m }
+    
+    
     /// A record representing a new row in the table `resource_versions`.
     type NewResourceVersion =
         { [<JsonPropertyName("id")>] Id: string
@@ -1148,7 +1184,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 02/03/2024 15:32:03 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 15:34:26 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
@@ -1441,6 +1477,30 @@ module Operations =
     
     let insertImagineVersion (context: SqliteContext) (parameters: Parameters.NewImagineVersion) =
         context.Insert("imagine_versions", parameters)
+    
+    /// Select a `Records.MetadataItem` from the table `metadata`.
+    /// Internally this calls `context.SelectSingleAnon<Records.MetadataItem>` and uses Records.MetadataItem.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectMetadataItemRecord ctx "WHERE `field` = @0" [ box `value` ]
+    let selectMetadataItemRecord (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.MetadataItem.SelectSql() ] @ query |> buildSql
+        context.SelectSingleAnon<Records.MetadataItem>(sql, parameters)
+    
+    /// Internally this calls `context.SelectAnon<Records.MetadataItem>` and uses Records.MetadataItem.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectMetadataItemRecords ctx "WHERE `field` = @0" [ box `value` ]
+    let selectMetadataItemRecords (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.MetadataItem.SelectSql() ] @ query |> buildSql
+        context.SelectAnon<Records.MetadataItem>(sql, parameters)
+    
+    let insertMetadataItem (context: SqliteContext) (parameters: Parameters.NewMetadataItem) =
+        context.Insert("metadata", parameters)
     
     /// Select a `Records.ResourceVersion` from the table `resource_versions`.
     /// Internally this calls `context.SelectSingleAnon<Records.ResourceVersion>` and uses Records.ResourceVersion.SelectSql().

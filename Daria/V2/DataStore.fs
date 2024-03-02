@@ -8,6 +8,11 @@ module DataStore =
     open Daria.V2
     open Daria.V2.Persistence
 
+    [<AutoOpen>]
+    module Common =
+        
+        let storeVersions = "2"
+    
     [<RequireQualifiedAccess>]
     module Initialization =
 
@@ -31,9 +36,13 @@ module DataStore =
             |> List.iter (fun ct ->
                 ({ Name = ct.Serialize() }: Parameters.NewCompressionType)
                 |> Operations.insertCompressionType ctx)
+            
+        let setInitializ
 
         let run (ctx: SqliteContext) =
+            // Create tables
             [ Records.SettingKeyValue.CreateTableSql()
+              Records.MetadataItem.CreateTableSql()
               Records.CompressionType.CreateTableSql()
               Records.EncryptionType.CreateTableSql()
               Records.Tag.CreateTableSql()
@@ -58,12 +67,15 @@ module DataStore =
             |> List.iter (ctx.ExecuteSqlNonQuery >> ignore)
 
 
+            // Seed data
             seedFileTypes ctx
             seedCompressionTypes ctx
             seedEncryptionTypes ctx
+            
+            // Set data
 
         let runInTransaction (ctx: SqliteContext) =
-            ()
+            ctx.ExecuteInTransaction run
 
         ()
 
