@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 02/03/2024 13:26:04 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 15:32:03 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -819,7 +819,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 02/03/2024 13:26:04 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 15:32:03 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -1148,7 +1148,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 02/03/2024 13:26:04 (utc) via Freql.Tools.
+/// Module generated on 02/03/2024 15:32:03 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
