@@ -1,8 +1,8 @@
-﻿module Daria.V2
+﻿namespace Daria.V2.Common
 
-[<AutoOpen>]
-module Common =
-    
+module Domain =
+
+
     [<RequireQualifiedAccess>]
     type EncryptionType =
         | None
@@ -101,9 +101,6 @@ module Common =
               FileType.QuickTime
               FileType.Wmv
               FileType.WebM ]
-
-        static member AllDetails() =
-            FileType.All() |> List.map (fun ft -> ft.GetDetails())
 
         static member TryDeserialize(str: string) =
             match str.ToLower() with
