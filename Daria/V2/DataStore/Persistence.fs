@@ -1,11 +1,11 @@
-namespace Daria.V2.Persistence
+namespace Daria.V2.DataStore.Persistence
 
 open System
 open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 02/03/2024 15:34:26 (utc) via Freql.Tools.
+/// Module generated on 03/03/2024 21:21:08 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -51,12 +51,12 @@ module Records =
     type ArticleVersionMetadataItem =
         { [<JsonPropertyName("articleVersionId")>] ArticleVersionId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ArticleVersionId = String.Empty
               ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE article_version_metadata (
@@ -234,12 +234,12 @@ module Records =
     type ArtifactMetadataItem =
         { [<JsonPropertyName("artifactId")>] ArtifactId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ArtifactId = String.Empty
               ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE artifact_metadata (
@@ -452,11 +452,11 @@ module Records =
     /// A record representing a row in the table `metadata`.
     type MetadataItem =
         { [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE metadata (
@@ -564,7 +564,7 @@ module Records =
     type Series =
         { [<JsonPropertyName("id")>] Id: string
           [<JsonPropertyName("name")>] Name: string
-          [<JsonPropertyName("parentSeries")>] ParentSeries: string option
+          [<JsonPropertyName("parentSeriesId")>] ParentSeriesId: string option
           [<JsonPropertyName("seriesOrder")>] SeriesOrder: int
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("active")>] Active: bool }
@@ -572,7 +572,7 @@ module Records =
         static member Blank() =
             { Id = String.Empty
               Name = String.Empty
-              ParentSeries = None
+              ParentSeriesId = None
               SeriesOrder = 0
               CreatedOn = DateTime.UtcNow
               Active = true }
@@ -581,11 +581,11 @@ module Records =
         CREATE TABLE series (
 	id TEXT NOT NULL,
 	name TEXT NOT NULL,
-	parent_series TEXT,
+	parent_series_id TEXT,
 	series_order INTEGER NOT NULL,
 	created_on TEXT NOT NULL, active INTEGER NOT NULL,
 	CONSTRAINT series_PK PRIMARY KEY (id),
-	CONSTRAINT series_FK FOREIGN KEY (parent_series) REFERENCES series(id)
+	CONSTRAINT series_FK FOREIGN KEY (parent_series_id) REFERENCES series(id)
 )
         """
     
@@ -593,7 +593,7 @@ module Records =
         SELECT
               series.`id`,
               series.`name`,
-              series.`parent_series`,
+              series.`parent_series_id`,
               series.`series_order`,
               series.`created_on`,
               series.`active`
@@ -606,12 +606,12 @@ module Records =
     type SeriesVersionMetadataItem =
         { [<JsonPropertyName("seriesVersionId")>] SeriesVersionId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { SeriesVersionId = String.Empty
               ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE series_version_metadata (
@@ -733,11 +733,11 @@ module Records =
     /// A record representing a row in the table `setting_key_values`.
     type SettingKeyValue =
         { [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE setting_key_values (
@@ -845,7 +845,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 02/03/2024 15:34:26 (utc) via Freql.Tools.
+/// Module generated on 03/03/2024 21:21:08 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -868,12 +868,12 @@ module Parameters =
     type NewArticleVersionMetadataItem =
         { [<JsonPropertyName("articleVersionId")>] ArticleVersionId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ArticleVersionId = String.Empty
               ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
     
     /// A record representing a new row in the table `article_version_tags`.
@@ -944,12 +944,12 @@ module Parameters =
     type NewArtifactMetadataItem =
         { [<JsonPropertyName("artifactId")>] ArtifactId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ArtifactId = String.Empty
               ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
     
     /// A record representing a new row in the table `artifacts`.
@@ -1029,11 +1029,11 @@ module Parameters =
     /// A record representing a new row in the table `metadata`.
     type NewMetadataItem =
         { [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
     
     /// A record representing a new row in the table `resource_versions`.
@@ -1074,7 +1074,7 @@ module Parameters =
     type NewSeries =
         { [<JsonPropertyName("id")>] Id: string
           [<JsonPropertyName("name")>] Name: string
-          [<JsonPropertyName("parentSeries")>] ParentSeries: string option
+          [<JsonPropertyName("parentSeriesId")>] ParentSeriesId: string option
           [<JsonPropertyName("seriesOrder")>] SeriesOrder: int
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("active")>] Active: bool }
@@ -1082,7 +1082,7 @@ module Parameters =
         static member Blank() =
             { Id = String.Empty
               Name = String.Empty
-              ParentSeries = None
+              ParentSeriesId = None
               SeriesOrder = 0
               CreatedOn = DateTime.UtcNow
               Active = true }
@@ -1092,12 +1092,12 @@ module Parameters =
     type NewSeriesVersionMetadataItem =
         { [<JsonPropertyName("seriesVersionId")>] SeriesVersionId: string
           [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { SeriesVersionId = String.Empty
               ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
     
     /// A record representing a new row in the table `series_version_tags`.
@@ -1143,11 +1143,11 @@ module Parameters =
     /// A record representing a new row in the table `setting_key_values`.
     type NewSettingKeyValue =
         { [<JsonPropertyName("itemKey")>] ItemKey: string
-          [<JsonPropertyName("itemValue")>] ItemValue: decimal }
+          [<JsonPropertyName("itemValue")>] ItemValue: string }
     
         static member Blank() =
             { ItemKey = String.Empty
-              ItemValue = 0m }
+              ItemValue = String.Empty }
     
     
     /// A record representing a new row in the table `tags`.
@@ -1184,7 +1184,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 02/03/2024 15:34:26 (utc) via Freql.Tools.
+/// Module generated on 03/03/2024 21:21:08 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
