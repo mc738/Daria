@@ -10,11 +10,22 @@
         <Compile Include="V1\Common.fs" />
         <Compile Include="V1\DataStore.fs" />
         <Compile Include="V1\PageBuilder.fs" />
-        <Compile Include="V2\Persistence.fs" />
-        <Compile Include="V2\Common.fs" />
-        <Compile Include="V2\DataStore.fs" />
-        <Compile Include="V2\PageBuilder.fs" />
-        <Compile Include="V2\IO.fs" />
+        <Compile Include="V2\Common\Domain.fs" />
+        <Compile Include="V2\DataStore\Persistence.fs" />
+        <Compile Include="V2\DataStore\Common.fs" />
+        <Compile Include="V2\DataStore\Models.fs" />
+        <Compile Include="V2\DataStore\Initialization.fs" />
+        <Compile Include="V2\DataStore\Settings.fs" />
+        <Compile Include="V2\DataStore\Tags.fs" />
+        <Compile Include="V2\DataStore\Resources.fs" />
+        <Compile Include="V2\DataStore\Images.fs" />
+        <Compile Include="V2\DataStore\Templates.fs" />
+        <Compile Include="V2\DataStore\Artifacts.fs" />
+        <Compile Include="V2\DataStore\Series.fs" />
+        <Compile Include="V2\DataStore\Articles.fs" />
+        <Compile Include="V2\DataStore\Impl.fs" />
+        <Folder Include="V2\Pages\" />
+        
     </ItemGroup>
 
     <ItemGroup>
