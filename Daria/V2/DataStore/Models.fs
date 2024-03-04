@@ -33,3 +33,9 @@ module Models =
           CreatedOn: DateTime
           Active: bool
           Draft: bool }
+
+
+    type ResourceVersionOverview =
+        {
+            Id: string
+        }
