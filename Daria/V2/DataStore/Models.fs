@@ -1,13 +1,13 @@
 ﻿namespace Daria.V2.DataStore
 
 open System
+open System.IO
+open Daria.V2.DataStore.Common
 
 module Models =
 
     open Daria.V2.DataStore.Persistence
 
-    type I
-    
     type SeriesListingItem =
         { Id: string
           Name: string
@@ -36,14 +36,12 @@ module Models =
           Active: bool
           Draft: bool }
 
-   
     type NewSeriesVersion =
-        {
-            SeriesId: string
-        }
-    
-        
-    type ResourceVersionOverview =
-        {
-            Id: string
-        }
+        { Id: IdType
+          SeriesId: string
+          Title: string
+          TitleSlug: string option
+          Description: string
+          IndexBlob: Stream }
+
+    type ResourceVersionOverview = { Id: string }
