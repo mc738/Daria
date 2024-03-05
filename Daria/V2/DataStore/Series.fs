@@ -9,7 +9,17 @@ module Series =
     open Freql.Sqlite
     open Daria.V2.DataStore.Persistence
 
-    module Internal =
+    module private Internal =
+
+        /// <summary>
+        /// An internal record representing a series version.
+        /// This contains the minimum data required for internal operations.
+        /// </summary>
+        type SeriesVersionListingItem =
+            { Id: string
+              Version: int
+              Active: bool
+              Draft: bool }
 
         let fetchTopLevelSeries (ctx: SqliteContext) =
             Operations.selectSeriesRecords ctx [ "WHERE parent_series_id IS NULL" ] []
@@ -42,6 +52,47 @@ module Series =
                 |> toSql
 
             ctx.SelectAnon<SeriesVersionOverview>(sql, [ seriesId ])
+            
+        let fetchSeriesVersionListings
+            (ctx: SqliteContext)
+            (seriesId: string)
+            (activeStatus: ActiveStatus)
+            (draftStatus: DraftStatus)
+            =
+            let sql =
+                [ "SELECT id, version, active, draft FROM series_versions"
+                  "WHERE series_id = @0"
+                  match activeStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> ()
+                  match draftStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> () ]
+                |> toSql
+
+            ctx.SelectAnon<SeriesVersionOverview>(sql, [ seriesId ])
+            
+        let fetchLatestVersionListing
+            (ctx: SqliteContext)
+            (seriesId: string)
+            (activeStatus: ActiveStatus)
+            (draftStatus: DraftStatus)
+            =
+            
+            let sql =
+                [ "SELECT id, version, active, draft FROM series_versions"
+                  "WHERE series_id = @0"
+                  match activeStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> ()
+                  match draftStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> ()
+                  "ORDER BY version DESC"
+                  "LIMIT 1" ]
+                |> toSql
+
+            ctx.SelectSingleAnon<SeriesVersionOverview>(sql, [ seriesId ])
 
     let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) = Internal.fetchSeriesVersions
 
@@ -60,7 +111,6 @@ module Series =
 
         Internal.fetchTopLevelSeries ctx |> build
 
-
     let fetchLatestVersion (ctx: SqliteContext) (seriesId: string) (includeDrafts: bool) =
         Operations.selectSeriesVersionRecord
             ctx
@@ -71,3 +121,10 @@ module Series =
               "ORDER BY version DESC"
               "LIMIT 1" ]
             [ seriesId ]
+
+    
+    let addNewDraftVersion (ctx: SqliteContext) ()
+    
+    let addOrReplaceDraftVersion (ctx: SqliteContext) (series: string) =
+
+        ()
