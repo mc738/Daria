@@ -6,6 +6,24 @@ module Common =
 
     let storeVersion = "2"
 
+
+    type IdType =
+        | Generated
+        | Specific of string
+        | Bespoke of (unit -> string)
+
+        member id.Generate() =
+            match id with
+            | Generated -> System.Guid.NewGuid().ToString("n") |> IdType.Specific
+            | Specific s -> id
+            | Bespoke unitFunc -> unitFunc () |> IdType.Specific
+
+        override id.ToString() =
+            match id with
+            | Generated -> System.Guid.NewGuid().ToString("n")
+            | Specific s -> s
+            | Bespoke unitFunc -> unitFunc ()
+
     [<RequireQualifiedAccess>]
     type ActiveStatus =
         | Active
@@ -41,14 +59,14 @@ module Common =
                     | true -> pf
                     | false -> $"{pf} ")
                 |> Option.defaultValue ""
-            
+
             match d with
             | DraftStatus.Draft -> Some $"{pf}draft = TRUE"
             | DraftStatus.NotDraft -> Some $"{pf}draft = FALSE"
             | DraftStatus.All -> None
 
     let toSql (parts: string list) = parts |> String.concat " "
-    
+
     let toMemoryStream (stream: Stream) =
         match stream with
         | :? MemoryStream -> stream :?> MemoryStream
@@ -56,5 +74,3 @@ module Common =
             use ms = new MemoryStream()
             stream.CopyTo(ms)
             ms
-            
-            
