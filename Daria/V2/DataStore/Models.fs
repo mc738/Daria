@@ -42,6 +42,8 @@ module Models =
           Title: string
           TitleSlug: string option
           Description: string
-          IndexBlob: Stream }
+          IndexBlob: Blob
+          ImageVersionId: EntityVersion option
+          CreatedOn: DateTime option }
 
     type ResourceVersionOverview = { Id: string }
