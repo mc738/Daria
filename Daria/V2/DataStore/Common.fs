@@ -1,6 +1,8 @@
 ﻿namespace Daria.V2.DataStore
 
+open System
 open System.IO
+open FsToolbox.Extensions.Strings
 
 module Common =
 
@@ -82,3 +84,13 @@ module Common =
             use ms = new MemoryStream()
             stream.CopyTo(ms)
             ms
+
+    let slugify (str: string) =
+        str
+        |> Seq.choose (fun c ->
+            match c with
+            | c when Char.IsLetterOrDigit(c) || c = ' ' -> Some c
+            | _ -> None)
+        |> Array.ofSeq
+        |> String
+        |> fun s -> s.ToSnakeCase()
