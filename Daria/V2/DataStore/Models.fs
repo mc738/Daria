@@ -6,6 +6,8 @@ module Models =
 
     open Daria.V2.DataStore.Persistence
 
+    type I
+    
     type SeriesListingItem =
         { Id: string
           Name: string
@@ -34,7 +36,13 @@ module Models =
           Active: bool
           Draft: bool }
 
-
+   
+    type NewSeriesVersion =
+        {
+            SeriesId: string
+        }
+    
+        
     type ResourceVersionOverview =
         {
             Id: string
