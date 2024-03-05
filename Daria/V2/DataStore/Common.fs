@@ -18,6 +18,14 @@ module Common =
             | Specific s -> id
             | Bespoke unitFunc -> unitFunc () |> IdType.Specific
 
+        member id.IsSpecified() =
+            match id with
+            | Generated -> false
+            | Specific _ -> true
+            | Bespoke _ -> false
+
+        member id.IsDynamic() = id.IsSpecified() |> not
+
         override id.ToString() =
             match id with
             | Generated -> System.Guid.NewGuid().ToString("n")
