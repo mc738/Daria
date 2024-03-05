@@ -28,6 +28,8 @@ module Common =
 
         member id.IsDynamic() = id.IsSpecified() |> not
 
+        member id.GetValue() = id.ToString()
+
         override id.ToString() =
             match id with
             | Generated -> System.Guid.NewGuid().ToString("n")
@@ -75,6 +77,26 @@ module Common =
             | DraftStatus.NotDraft -> Some $"{pf}draft = FALSE"
             | DraftStatus.All -> None
 
+    [<RequireQualifiedAccess>]
+    type AddVersionResult =
+        | Success of Id: string
+        | NotChange
+        | Failure of exn
+        
+        
+    /// <summary>
+    /// Represents data to be saved as a blob.
+    /// It can either be in a prepared or unprepared state.
+    /// A prepared blob blob will have data in a memory stream and a precomputed hash.
+    /// A unprepared blob will be a raw string 
+    /// </summary>
+    [<RequireQualifiedAccess>]
+    type Blob =
+        | Prepared of Stream: MemoryStream * Hash: string
+        | Stream of Stream
+        | Text of string
+        | Bytes of Byte array
+    
     let toSql (parts: string list) = parts |> String.concat " "
 
     let toMemoryStream (stream: Stream) =
