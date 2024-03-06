@@ -9,8 +9,6 @@ module Images =
         
         ()
 
-    
-    
     let getLatestVersion (ctx: SqliteContext) (imageId: string) =
         
         
