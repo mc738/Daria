@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 03/03/2024 21:21:08 (utc) via Freql.Tools.
+/// Module generated on 05/03/2024 19:38:49 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -122,7 +122,7 @@ module Records =
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("publishedOn")>] PublishedOn: bool option
           [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: int64 }
+          [<JsonPropertyName("draft")>] Draft: bool }
     
         static member Blank() =
             { Id = String.Empty
@@ -139,7 +139,7 @@ module Records =
               CreatedOn = DateTime.UtcNow
               PublishedOn = None
               Active = true
-              Draft = 0L }
+              Draft = true }
     
         static member CreateTableSql() = """
         CREATE TABLE article_versions (
@@ -669,12 +669,12 @@ module Records =
           [<JsonPropertyName("title")>] Title: string
           [<JsonPropertyName("titleSlug")>] TitleSlug: string
           [<JsonPropertyName("description")>] Description: string
-          [<JsonPropertyName("indexBlob")>] IndexBlob: int
+          [<JsonPropertyName("indexBlob")>] IndexBlob: BlobField
           [<JsonPropertyName("hash")>] Hash: string
           [<JsonPropertyName("imageVersionId")>] ImageVersionId: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: int64 }
+          [<JsonPropertyName("draft")>] Draft: bool }
     
         static member Blank() =
             { Id = String.Empty
@@ -683,12 +683,12 @@ module Records =
               Title = String.Empty
               TitleSlug = String.Empty
               Description = String.Empty
-              IndexBlob = 0
+              IndexBlob = BlobField.Empty()
               Hash = String.Empty
               ImageVersionId = None
               CreatedOn = DateTime.UtcNow
               Active = true
-              Draft = 0L }
+              Draft = true }
     
         static member CreateTableSql() = """
         CREATE TABLE series_versions (
@@ -845,7 +845,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 03/03/2024 21:21:08 (utc) via Freql.Tools.
+/// Module generated on 05/03/2024 19:38:49 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -902,7 +902,7 @@ module Parameters =
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("publishedOn")>] PublishedOn: bool option
           [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: int64 }
+          [<JsonPropertyName("draft")>] Draft: bool }
     
         static member Blank() =
             { Id = String.Empty
@@ -919,7 +919,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow
               PublishedOn = None
               Active = true
-              Draft = 0L }
+              Draft = true }
     
     
     /// A record representing a new row in the table `articles`.
@@ -1118,12 +1118,12 @@ module Parameters =
           [<JsonPropertyName("title")>] Title: string
           [<JsonPropertyName("titleSlug")>] TitleSlug: string
           [<JsonPropertyName("description")>] Description: string
-          [<JsonPropertyName("indexBlob")>] IndexBlob: int
+          [<JsonPropertyName("indexBlob")>] IndexBlob: BlobField
           [<JsonPropertyName("hash")>] Hash: string
           [<JsonPropertyName("imageVersionId")>] ImageVersionId: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: int64 }
+          [<JsonPropertyName("draft")>] Draft: bool }
     
         static member Blank() =
             { Id = String.Empty
@@ -1132,12 +1132,12 @@ module Parameters =
               Title = String.Empty
               TitleSlug = String.Empty
               Description = String.Empty
-              IndexBlob = 0
+              IndexBlob = BlobField.Empty()
               Hash = String.Empty
               ImageVersionId = None
               CreatedOn = DateTime.UtcNow
               Active = true
-              Draft = 0L }
+              Draft = true }
     
     
     /// A record representing a new row in the table `setting_key_values`.
@@ -1184,7 +1184,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 03/03/2024 21:21:08 (utc) via Freql.Tools.
+/// Module generated on 05/03/2024 19:38:49 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
