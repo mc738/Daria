@@ -1,13 +1,21 @@
 ﻿namespace Daria.V2.DataStore
 
-open Daria.V2.DataStore.Common
-open Daria.V2.DataStore.Models
+
+
+
 
 [<RequireQualifiedAccess>]
 module Series =
 
+    open System
+    open System.IO
+    open Freql.Core.Common.Types
     open Freql.Sqlite
+    open FsToolbox.Extensions.Streams
+    open FsToolbox.Extensions.Strings
     open Daria.V2.DataStore.Persistence
+    open Daria.V2.DataStore.Common
+    open Daria.V2.DataStore.Models
 
     module private Internal =
 
@@ -52,7 +60,7 @@ module Series =
                 |> toSql
 
             ctx.SelectAnon<SeriesVersionOverview>(sql, [ seriesId ])
-            
+
         let fetchSeriesVersionListings
             (ctx: SqliteContext)
             (seriesId: string)
@@ -71,14 +79,14 @@ module Series =
                 |> toSql
 
             ctx.SelectAnon<SeriesVersionOverview>(sql, [ seriesId ])
-            
+
         let fetchLatestVersionListing
             (ctx: SqliteContext)
             (seriesId: string)
             (activeStatus: ActiveStatus)
             (draftStatus: DraftStatus)
             =
-            
+
             let sql =
                 [ "SELECT id, version, active, draft FROM series_versions"
                   "WHERE series_id = @0"
@@ -93,6 +101,10 @@ module Series =
                 |> toSql
 
             ctx.SelectSingleAnon<SeriesVersionOverview>(sql, [ seriesId ])
+
+        let deleteSeriesVersion (ctx: SqliteContext) (seriesVersionId: string) =
+            ctx.ExecuteVerbatimNonQueryAnon("DELETE FROM series_versions WHERE id = @0", [ seriesVersionId ])
+            |> ignore
 
     let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) = Internal.fetchSeriesVersions
 
@@ -122,9 +134,55 @@ module Series =
               "LIMIT 1" ]
             [ seriesId ]
 
+
+    let addNewDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) =
+        let (ms, hash) =
+            match newVersion.IndexBlob with
+            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+            | Blob.Stream stream ->
+                let ms = stream |> toMemoryStream
+                ms, ms.GetSHA256Hash()
+            | Blob.Text t ->
+                use ms = new MemoryStream(t.ToUtf8Bytes())
+                ms, ms.GetSHA256Hash()
+            | Blob.Bytes b ->
+                use ms = new MemoryStream(b)
+                ms, ms.GetSHA256Hash()
+        
+        ({ Id = newVersion.Id.ToString()
+           SeriesId = newVersion.SeriesId
+           Version = failwith "todo"
+           Title = newVersion.Title
+           TitleSlug =
+             newVersion.TitleSlug
+             |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
+           Description = newVersion.Description
+           IndexBlob = BlobField.FromStream ms
+           Hash = hash
+           ImageVersionId = failwith "todo"
+           CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
+           Active = true
+           Draft = true }
+        : Parameters.NewSeriesVersion)
+        |> Operations.insertSeriesVersion ctx
+
+    let deleteLatestDraft (ctx: SqliteContext) (seriesId: string) =
+        match
+            Internal.fetchLatestVersionListing ctx seriesId ActiveStatus.Active DraftStatus.Draft,
+            Internal.fetchLatestVersionListing ctx seriesId ActiveStatus.Active DraftStatus.NotDraft
+        with
+        | Some dv, Some ndv ->
+            // Check if the latest draft version is the same or high than the latest non draft version.
+            // This is to ensure old draft versions are not removed.
+            match dv.Version >= ndv.Version with
+            | true -> Internal.deleteSeriesVersion ctx dv.Id
+            | false -> ()
+        | Some dv, None -> Internal.deleteSeriesVersion ctx dv.Id
+        | None, _ -> ()
+
     
-    let addNewDraftVersion (ctx: SqliteContext) ()
     
     let addOrReplaceDraftVersion (ctx: SqliteContext) (series: string) =
+        
 
         ()
