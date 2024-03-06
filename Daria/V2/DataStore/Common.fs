@@ -8,7 +8,6 @@ module Common =
 
     let storeVersion = "2"
 
-
     type IdType =
         | Generated
         | Specific of string
@@ -96,6 +95,10 @@ module Common =
         | Stream of Stream
         | Text of string
         | Bytes of Byte array
+    
+    type EntityVersion =
+        | Specific of Id: string * Version: int
+        | Latest of Id: string
     
     let toSql (parts: string list) = parts |> String.concat " "
 
