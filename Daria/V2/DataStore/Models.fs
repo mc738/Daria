@@ -8,6 +8,12 @@ module Models =
 
     open Daria.V2.DataStore.Persistence
 
+    type ImageVersionDetails =
+        {
+            Id: string
+            
+        }
+    
     type SeriesListingItem =
         { Id: string
           Name: string
@@ -43,7 +49,7 @@ module Models =
           TitleSlug: string option
           Description: string
           IndexBlob: Blob
-          ImageVersionId: EntityVersion option
+          ImageVersionId: RelatedEntity option
           CreatedOn: DateTime option }
 
     type ResourceVersionOverview = { Id: string }
