@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open Freql.Sqlite
 open FsToolbox.Extensions.Strings
 
 module Common =
@@ -101,9 +102,10 @@ module Common =
         | Latest of Id: string
     
     [<RequireQualifiedAccess>]
-    type RelatedItem =
-        | Lookup of EntityVersion
+    type RelatedEntity =
+        | Lookup of Version: EntityVersion
         | Specified of Id: string
+        | Bespoke of (SqliteContext -> string option) 
     
     let toSql (parts: string list) = parts |> String.concat " "
 
