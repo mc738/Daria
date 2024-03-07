@@ -100,6 +100,11 @@ module Common =
         | Specific of Id: string * Version: int
         | Latest of Id: string
     
+    [<RequireQualifiedAccess>]
+    type RelatedItem =
+        | Lookup of EntityVersion
+        | Specified of Id: string
+    
     let toSql (parts: string list) = parts |> String.concat " "
 
     let toMemoryStream (stream: Stream) =
