@@ -152,6 +152,21 @@ module Series =
         | None, _ -> ()
 
     let addOrReplaceDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) =
+        let (ms, hash) =
+            match newVersion.IndexBlob with
+            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+            | Blob.Stream stream ->
+                let ms = stream |> toMemoryStream
+                ms, ms.GetSHA256Hash()
+            | Blob.Text t ->
+                use ms = new MemoryStream(t.ToUtf8Bytes())
+                ms, ms.GetSHA256Hash()
+            | Blob.Bytes b ->
+                use ms = new MemoryStream(b)
+                ms, ms.GetSHA256Hash()
+        
+        
+        
         let version =
             match
                 Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.Draft,
@@ -167,19 +182,6 @@ module Series =
             | None, Some ndv -> ndv.Version + 1
             | None, None -> 1
         
-        let (ms, hash) =
-            match newVersion.IndexBlob with
-            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
-            | Blob.Stream stream ->
-                let ms = stream |> toMemoryStream
-                ms, ms.GetSHA256Hash()
-            | Blob.Text t ->
-                use ms = new MemoryStream(t.ToUtf8Bytes())
-                ms, ms.GetSHA256Hash()
-            | Blob.Bytes b ->
-                use ms = new MemoryStream(b)
-                ms, ms.GetSHA256Hash()
-
         let ivi =
             newVersion.ImageVersion
             |> Option.bind (function
