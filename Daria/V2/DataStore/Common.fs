@@ -101,6 +101,10 @@ module Common =
         | Specific of Id: string * Version: int
         | Latest of Id: string
     
+    /// <summary>
+    /// A union type to definite related entities.
+    /// Because a related entity could be predefined or require a look up this is used to model relationships
+    /// </summary>
     [<RequireQualifiedAccess>]
     type RelatedEntity =
         | Lookup of Version: EntityVersion
