@@ -1,5 +1,8 @@
 ﻿namespace Daria.V2.DataStore
 
+open Daria.V2.DataStore.Common
+open Daria.V2.DataStore.Persistence
+
 
 
 
@@ -100,7 +103,7 @@ module Series =
                   "LIMIT 1" ]
                 |> toSql
 
-            ctx.SelectSingleAnon<SeriesVersionOverview>(sql, [ seriesId ])
+            ctx.SelectSingleAnon<SeriesVersionListingItem>(sql, [ seriesId ])
 
         let deleteSeriesVersion (ctx: SqliteContext) (seriesVersionId: string) =
             ctx.ExecuteVerbatimNonQueryAnon("DELETE FROM series_versions WHERE id = @0", [ seriesVersionId ])
@@ -134,38 +137,6 @@ module Series =
               "LIMIT 1" ]
             [ seriesId ]
 
-
-    let addNewDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) =
-        let (ms, hash) =
-            match newVersion.IndexBlob with
-            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
-            | Blob.Stream stream ->
-                let ms = stream |> toMemoryStream
-                ms, ms.GetSHA256Hash()
-            | Blob.Text t ->
-                use ms = new MemoryStream(t.ToUtf8Bytes())
-                ms, ms.GetSHA256Hash()
-            | Blob.Bytes b ->
-                use ms = new MemoryStream(b)
-                ms, ms.GetSHA256Hash()
-        
-        ({ Id = newVersion.Id.ToString()
-           SeriesId = newVersion.SeriesId
-           Version = failwith "todo"
-           Title = newVersion.Title
-           TitleSlug =
-             newVersion.TitleSlug
-             |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
-           Description = newVersion.Description
-           IndexBlob = BlobField.FromStream ms
-           Hash = hash
-           ImageVersionId = failwith "todo"
-           CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
-           Active = true
-           Draft = true }
-        : Parameters.NewSeriesVersion)
-        |> Operations.insertSeriesVersion ctx
-
     let deleteLatestDraft (ctx: SqliteContext) (seriesId: string) =
         match
             Internal.fetchLatestVersionListing ctx seriesId ActiveStatus.Active DraftStatus.Draft,
@@ -180,9 +151,63 @@ module Series =
         | Some dv, None -> Internal.deleteSeriesVersion ctx dv.Id
         | None, _ -> ()
 
-    
-    
-    let addOrReplaceDraftVersion (ctx: SqliteContext) (series: string) =
+    let addOrReplaceDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) =
+        let version =
+            match
+                Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.Draft,
+                Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.NotDraft
+            with
+            | Some dv, Some ndv ->
+                // Check if the latest draft version is the same or high than the latest non draft version.
+                // This is to ensure old draft versions are not removed.
+                match dv.Version >= ndv.Version with
+                | true -> Internal.deleteSeriesVersion ctx dv.Id; dv.Version
+                | false -> ndv.Version + 1
+            | Some dv, None -> Internal.deleteSeriesVersion ctx dv.Id; dv.Version
+            | None, Some ndv -> ndv.Version + 1
+            | None, None -> 1
         
+        let (ms, hash) =
+            match newVersion.IndexBlob with
+            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+            | Blob.Stream stream ->
+                let ms = stream |> toMemoryStream
+                ms, ms.GetSHA256Hash()
+            | Blob.Text t ->
+                use ms = new MemoryStream(t.ToUtf8Bytes())
+                ms, ms.GetSHA256Hash()
+            | Blob.Bytes b ->
+                use ms = new MemoryStream(b)
+                ms, ms.GetSHA256Hash()
 
+        let ivi =
+            newVersion.ImageVersion
+            |> Option.bind (function
+                | RelatedEntity.Specified id -> Some id
+                | RelatedEntity.Lookup version ->
+                    match version with
+                    | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
+                    | Latest id -> Images.Internal.getLatestVersion ctx id
+                    |> Option.map (fun i -> i.Id)
+                | RelatedEntity.Bespoke fn -> fn ctx)
+
+
+        ({ Id = newVersion.Id.ToString()
+           SeriesId = newVersion.SeriesId
+           Version = version
+           Title = newVersion.Title
+           TitleSlug =
+             newVersion.TitleSlug
+             |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
+           Description = newVersion.Description
+           IndexBlob = BlobField.FromStream ms
+           Hash = hash
+           ImageVersionId = ivi
+           CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
+           Active = true
+           Draft = true }
+        : Parameters.NewSeriesVersion)
+        |> Operations.insertSeriesVersion ctx
+
+    let addVersion (ctx: SqliteContext) (newVersion: Parameters.NewSeriesVersion) =
         ()
