@@ -21,6 +21,9 @@ module Series =
     open Daria.V2.DataStore.Models
 
     module private Internal =
+        
+        type AdditionAction =
+            | DeleteExistingVersion of VersionId : string
 
         /// <summary>
         /// An internal record representing a series version.
@@ -29,6 +32,7 @@ module Series =
         type SeriesVersionListingItem =
             { Id: string
               Version: int
+              Hash: string
               Active: bool
               Draft: bool }
 
@@ -71,7 +75,7 @@ module Series =
             (draftStatus: DraftStatus)
             =
             let sql =
-                [ "SELECT id, version, active, draft FROM series_versions"
+                [ "SELECT id, version, hash, active, draft FROM series_versions"
                   "WHERE series_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -108,7 +112,13 @@ module Series =
         let deleteSeriesVersion (ctx: SqliteContext) (seriesVersionId: string) =
             ctx.ExecuteVerbatimNonQueryAnon("DELETE FROM series_versions WHERE id = @0", [ seriesVersionId ])
             |> ignore
+            
+        let handleAdditionAction (ctx: SqliteContext) (action: AdditionAction) =
+            match action with
+            | DeleteExistingVersion versionId -> deleteSeriesVersion ctx versionId
 
+    open Internal
+    
     let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) = Internal.fetchSeriesVersions
 
     let list (ctx: SqliteContext) =
@@ -152,64 +162,73 @@ module Series =
         | None, _ -> ()
 
     let addOrReplaceDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) =
-        let (ms, hash) =
-            match newVersion.IndexBlob with
-            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
-            | Blob.Stream stream ->
-                let ms = stream |> toMemoryStream
-                ms, ms.GetSHA256Hash()
-            | Blob.Text t ->
-                use ms = new MemoryStream(t.ToUtf8Bytes())
-                ms, ms.GetSHA256Hash()
-            | Blob.Bytes b ->
-                use ms = new MemoryStream(b)
-                ms, ms.GetSHA256Hash()
-        
-        
-        
-        let version =
-            match
-                Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.Draft,
-                Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.NotDraft
-            with
-            | Some dv, Some ndv ->
-                // Check if the latest draft version is the same or high than the latest non draft version.
-                // This is to ensure old draft versions are not removed.
-                match dv.Version >= ndv.Version with
-                | true -> Internal.deleteSeriesVersion ctx dv.Id; dv.Version
-                | false -> ndv.Version + 1
-            | Some dv, None -> Internal.deleteSeriesVersion ctx dv.Id; dv.Version
-            | None, Some ndv -> ndv.Version + 1
-            | None, None -> 1
-        
-        let ivi =
-            newVersion.ImageVersion
-            |> Option.bind (function
-                | RelatedEntity.Specified id -> Some id
-                | RelatedEntity.Lookup version ->
-                    match version with
-                    | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
-                    | Latest id -> Images.Internal.getLatestVersion ctx id
-                    |> Option.map (fun i -> i.Id)
-                | RelatedEntity.Bespoke fn -> fn ctx)
+        ctx.ExecuteInTransactionV2(fun t ->
+            let (ms, hash) =
+                match newVersion.IndexBlob with
+                | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+                | Blob.Stream stream ->
+                    let ms = stream |> toMemoryStream
+                    ms, ms.GetSHA256Hash()
+                | Blob.Text t ->
+                    use ms = new MemoryStream(t.ToUtf8Bytes())
+                    ms, ms.GetSHA256Hash()
+                | Blob.Bytes b ->
+                    use ms = new MemoryStream(b)
+                    ms, ms.GetSHA256Hash()
+                    
+            let (version, prevHash, AdditionAction) =
+                match
+                    Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.Draft,
+                    Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.NotDraft
+                with
+                | Some dv, Some ndv ->
+                    // Check if the latest draft version is the same or high than the latest non draft version.
+                    // This is to ensure old draft versions are not removed.
+                    match dv.Version >= ndv.Version with
+                    | true -> dv.Version, Some dv.Hash, AdditionAction.DeleteExistingVersion dv.Id |>Some
+                    | false -> ndv.Version + 1, None, None
+                | Some dv, None -> dv.Version, Some dv.Hash, AdditionAction.DeleteExistingVersion dv.Id |>Some
+                | None, Some ndv -> ndv.Version + 1, None, None
+                | None, None -> 1, None, None
+                
+            match     
+            
+                
+            let ivi =
+                newVersion.ImageVersion
+                |> Option.bind (function
+                    | RelatedEntity.Specified id -> Some id
+                    | RelatedEntity.Lookup version ->
+                        match version with
+                        | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
+                        | Latest id -> Images.Internal.getLatestVersion ctx id
+                        |> Option.map (fun i -> i.Id)
+                    | RelatedEntity.Bespoke fn -> fn ctx)
 
 
-        ({ Id = newVersion.Id.ToString()
-           SeriesId = newVersion.SeriesId
-           Version = version
-           Title = newVersion.Title
-           TitleSlug =
-             newVersion.TitleSlug
-             |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
-           Description = newVersion.Description
-           IndexBlob = BlobField.FromStream ms
-           Hash = hash
-           ImageVersionId = ivi
-           CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
-           Active = true
-           Draft = true }
-        : Parameters.NewSeriesVersion)
-        |> Operations.insertSeriesVersion ctx
+            ({ Id = newVersion.Id.ToString()
+               SeriesId = newVersion.SeriesId
+               Version = version
+               Title = newVersion.Title
+               TitleSlug =
+                 newVersion.TitleSlug
+                 |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
+               Description = newVersion.Description
+               IndexBlob = BlobField.FromStream ms
+               Hash = hash
+               ImageVersionId = ivi
+               CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
+               Active = true
+               Draft = true }
+            : Parameters.NewSeriesVersion)
+            |> Operations.insertSeriesVersion ctx
+            
+            Ok ())
+        
+        
+        
+        
+        
 
     let addVersion (ctx: SqliteContext) (newVersion: Parameters.NewSeriesVersion) =
         ()
