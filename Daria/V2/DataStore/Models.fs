@@ -33,7 +33,7 @@ module Models =
 
     and SeriesVersionOverview =
         { Id: string
-          Version: string
+          Version: int
           Title: string
           TitleSlug: string
           Description: string
@@ -49,7 +49,7 @@ module Models =
           TitleSlug: string option
           Description: string
           IndexBlob: Blob
-          ImageVersionId: RelatedEntity option
+          ImageVersion: RelatedEntity option
           CreatedOn: DateTime option }
 
     type ResourceVersionOverview = { Id: string }
