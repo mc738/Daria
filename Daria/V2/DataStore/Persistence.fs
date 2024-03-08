@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 08/03/2024 19:56:41 (utc) via Freql.Tools.
+/// Module generated on 08/03/2024 19:58:10 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -111,6 +111,7 @@ module Records =
         { [<JsonPropertyName("id")>] Id: string
           [<JsonPropertyName("articleId")>] ArticleId: string
           [<JsonPropertyName("version")>] Version: int
+          [<JsonPropertyName("draftVersion")>] DraftVersion: int option
           [<JsonPropertyName("title")>] Title: string
           [<JsonPropertyName("titleSlug")>] TitleSlug: string
           [<JsonPropertyName("description")>] Description: string
@@ -121,13 +122,13 @@ module Records =
           [<JsonPropertyName("overrideCssName")>] OverrideCssName: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("publishedOn")>] PublishedOn: bool option
-          [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: bool }
+          [<JsonPropertyName("active")>] Active: bool }
     
         static member Blank() =
             { Id = String.Empty
               ArticleId = String.Empty
               Version = 0
+              DraftVersion = None
               Title = String.Empty
               TitleSlug = String.Empty
               Description = String.Empty
@@ -138,14 +139,14 @@ module Records =
               OverrideCssName = None
               CreatedOn = DateTime.UtcNow
               PublishedOn = None
-              Active = true
-              Draft = true }
+              Active = true }
     
         static member CreateTableSql() = """
         CREATE TABLE article_versions (
 	id TEXT NOT NULL,
 	article_id TEXT NOT NULL,
 	version INTEGER NOT NULL,
+	draft_version INTEGER,
 	title TEXT NOT NULL,
 	title_slug TEXT NOT NULL,
 	description TEXT NOT NULL,
@@ -157,9 +158,8 @@ module Records =
 	created_on TEXT NOT NULL,
 	published_on TEXT,
 	active INTEGER NOT NULL,
-	draft INTEGER NOT NULL,
 	CONSTRAINT article_versions_PK PRIMARY KEY (id),
-	CONSTRAINT article_versions_UN UNIQUE (article_id,version,draft),
+	CONSTRAINT article_versions_UN UNIQUE (article_id,version,draft_version),
 	CONSTRAINT article_versions_FK FOREIGN KEY (article_id) REFERENCES articles(id),
 	CONSTRAINT article_versions_FK_1 FOREIGN KEY (image_version_id) REFERENCES imagine_versions(id)
 )
@@ -170,6 +170,7 @@ module Records =
               article_versions.`id`,
               article_versions.`article_id`,
               article_versions.`version`,
+              article_versions.`draft_version`,
               article_versions.`title`,
               article_versions.`title_slug`,
               article_versions.`description`,
@@ -180,8 +181,7 @@ module Records =
               article_versions.`override_css_name`,
               article_versions.`created_on`,
               article_versions.`published_on`,
-              article_versions.`active`,
-              article_versions.`draft`
+              article_versions.`active`
         FROM article_versions
         """
     
@@ -666,6 +666,7 @@ module Records =
         { [<JsonPropertyName("id")>] Id: string
           [<JsonPropertyName("seriesId")>] SeriesId: string
           [<JsonPropertyName("version")>] Version: int
+          [<JsonPropertyName("draftVersion")>] DraftVersion: int option
           [<JsonPropertyName("title")>] Title: string
           [<JsonPropertyName("titleSlug")>] TitleSlug: string
           [<JsonPropertyName("description")>] Description: string
@@ -673,13 +674,13 @@ module Records =
           [<JsonPropertyName("hash")>] Hash: string
           [<JsonPropertyName("imageVersionId")>] ImageVersionId: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
-          [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: bool }
+          [<JsonPropertyName("active")>] Active: bool }
     
         static member Blank() =
             { Id = String.Empty
               SeriesId = String.Empty
               Version = 0
+              DraftVersion = None
               Title = String.Empty
               TitleSlug = String.Empty
               Description = String.Empty
@@ -687,14 +688,14 @@ module Records =
               Hash = String.Empty
               ImageVersionId = None
               CreatedOn = DateTime.UtcNow
-              Active = true
-              Draft = true }
+              Active = true }
     
         static member CreateTableSql() = """
         CREATE TABLE series_versions (
 	id TEXT NOT NULL,
 	series_id TEXT NOT NULL,
 	version INTEGER NOT NULL,
+	draft_version INTEGER,
 	title TEXT NOT NULL,
 	title_slug TEXT NOT NULL,
 	description TEXT NOT NULL,
@@ -702,10 +703,9 @@ module Records =
 	hash TEXT NOT NULL,
 	image_version_id TEXT,
 	created_on TEXT NOT NULL, 
-	active INTEGER NOT NULL, 
-	draft INTEGER NOT NULL,
+	active INTEGER NOT NULL,
 	CONSTRAINT series_versions_PK PRIMARY KEY (id),
-	CONSTRAINT series_versions_UN UNIQUE (series_id,version,draft),
+	CONSTRAINT series_versions_UN UNIQUE (series_id,version,draft_version),
 	CONSTRAINT series_versions_FK FOREIGN KEY (series_id) REFERENCES series(id),
 	CONSTRAINT series_versions_FK_1 FOREIGN KEY (image_version_id) REFERENCES imagine_versions(id)
 )
@@ -716,6 +716,7 @@ module Records =
               series_versions.`id`,
               series_versions.`series_id`,
               series_versions.`version`,
+              series_versions.`draft_version`,
               series_versions.`title`,
               series_versions.`title_slug`,
               series_versions.`description`,
@@ -723,8 +724,7 @@ module Records =
               series_versions.`hash`,
               series_versions.`image_version_id`,
               series_versions.`created_on`,
-              series_versions.`active`,
-              series_versions.`draft`
+              series_versions.`active`
         FROM series_versions
         """
     
@@ -845,7 +845,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 08/03/2024 19:56:41 (utc) via Freql.Tools.
+/// Module generated on 08/03/2024 19:58:10 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -891,6 +891,7 @@ module Parameters =
         { [<JsonPropertyName("id")>] Id: string
           [<JsonPropertyName("articleId")>] ArticleId: string
           [<JsonPropertyName("version")>] Version: int
+          [<JsonPropertyName("draftVersion")>] DraftVersion: int option
           [<JsonPropertyName("title")>] Title: string
           [<JsonPropertyName("titleSlug")>] TitleSlug: string
           [<JsonPropertyName("description")>] Description: string
@@ -901,13 +902,13 @@ module Parameters =
           [<JsonPropertyName("overrideCssName")>] OverrideCssName: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
           [<JsonPropertyName("publishedOn")>] PublishedOn: bool option
-          [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: bool }
+          [<JsonPropertyName("active")>] Active: bool }
     
         static member Blank() =
             { Id = String.Empty
               ArticleId = String.Empty
               Version = 0
+              DraftVersion = None
               Title = String.Empty
               TitleSlug = String.Empty
               Description = String.Empty
@@ -918,8 +919,7 @@ module Parameters =
               OverrideCssName = None
               CreatedOn = DateTime.UtcNow
               PublishedOn = None
-              Active = true
-              Draft = true }
+              Active = true }
     
     
     /// A record representing a new row in the table `articles`.
@@ -1115,6 +1115,7 @@ module Parameters =
         { [<JsonPropertyName("id")>] Id: string
           [<JsonPropertyName("seriesId")>] SeriesId: string
           [<JsonPropertyName("version")>] Version: int
+          [<JsonPropertyName("draftVersion")>] DraftVersion: int option
           [<JsonPropertyName("title")>] Title: string
           [<JsonPropertyName("titleSlug")>] TitleSlug: string
           [<JsonPropertyName("description")>] Description: string
@@ -1122,13 +1123,13 @@ module Parameters =
           [<JsonPropertyName("hash")>] Hash: string
           [<JsonPropertyName("imageVersionId")>] ImageVersionId: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
-          [<JsonPropertyName("active")>] Active: bool
-          [<JsonPropertyName("draft")>] Draft: bool }
+          [<JsonPropertyName("active")>] Active: bool }
     
         static member Blank() =
             { Id = String.Empty
               SeriesId = String.Empty
               Version = 0
+              DraftVersion = None
               Title = String.Empty
               TitleSlug = String.Empty
               Description = String.Empty
@@ -1136,8 +1137,7 @@ module Parameters =
               Hash = String.Empty
               ImageVersionId = None
               CreatedOn = DateTime.UtcNow
-              Active = true
-              Draft = true }
+              Active = true }
     
     
     /// A record representing a new row in the table `setting_key_values`.
@@ -1184,7 +1184,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 08/03/2024 19:56:41 (utc) via Freql.Tools.
+/// Module generated on 08/03/2024 19:58:10 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
