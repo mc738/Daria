@@ -17,9 +17,6 @@ module Resources =
                 [ resourceId ]
 
 
-
-
-
     let fetchLatestVersionDataAsBytes (ctx: SqliteContext) (resourceId: string) =
         Internal.fetchLatestVersion ctx resourceId |> Option.map (fun r -> r.RawBlob.ToString())
 
