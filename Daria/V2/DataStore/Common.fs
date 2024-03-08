@@ -81,14 +81,14 @@ module Common =
     type AddVersionResult =
         | Success of Id: string
         | NotChange
-        | Failure of exn
-        
-        
+        | Failure of Message: string * Exception: exn option
+
+
     /// <summary>
     /// Represents data to be saved as a blob.
     /// It can either be in a prepared or unprepared state.
     /// A prepared blob blob will have data in a memory stream and a precomputed hash.
-    /// A unprepared blob will be a raw string 
+    /// A unprepared blob will be a raw string
     /// </summary>
     [<RequireQualifiedAccess>]
     type Blob =
@@ -96,11 +96,11 @@ module Common =
         | Stream of Stream
         | Text of string
         | Bytes of Byte array
-    
+
     type EntityVersion =
         | Specific of Id: string * Version: int
         | Latest of Id: string
-    
+
     /// <summary>
     /// A union type to definite related entities.
     /// Because a related entity could be predefined or require a look up this is used to model relationships
@@ -109,8 +109,8 @@ module Common =
     type RelatedEntity =
         | Lookup of Version: EntityVersion
         | Specified of Id: string
-        | Bespoke of (SqliteContext -> string option) 
-    
+        | Bespoke of (SqliteContext -> string option)
+
     let toSql (parts: string list) = parts |> String.concat " "
 
     let toMemoryStream (stream: Stream) =
@@ -130,3 +130,9 @@ module Common =
         |> Array.ofSeq
         |> String
         |> fun s -> s.ToSnakeCase()
+
+    let compareHashes (strA: string option) (strB: string) =
+        match strA with
+        | Some s when s.Equals(strB, StringComparison.OrdinalIgnoreCase) |> not -> true
+        | Some _ -> false
+        | None -> true
