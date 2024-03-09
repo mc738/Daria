@@ -62,7 +62,6 @@ module Common =
         | NotDraft
         | All
 
-
         member d.ToSqlOption(?prefix: string) =
             let pf =
                 prefix
@@ -73,8 +72,8 @@ module Common =
                 |> Option.defaultValue ""
 
             match d with
-            | DraftStatus.Draft -> Some $"{pf}draft = TRUE"
-            | DraftStatus.NotDraft -> Some $"{pf}draft = FALSE"
+            | DraftStatus.Draft -> Some $"{pf}draft IS NOT NULL"
+            | DraftStatus.NotDraft -> Some $"{pf}draft IS NULL"
             | DraftStatus.All -> None
 
     [<RequireQualifiedAccess>]
