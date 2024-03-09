@@ -115,6 +115,10 @@ module Series =
 
     let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) = Internal.fetchSeriesVersions
 
+    let exists (ctx: SqliteContext) (seriesId: string) =
+        Operations.selectSeriesRecord ctx [ "WHERE id = @0;" ] [ seriesId ]
+        |> Option.isSome
+
     let list (ctx: SqliteContext) =
         let rec build (series: Records.Series list) =
             series
@@ -155,7 +159,17 @@ module Series =
         | Some dv, None -> Internal.deleteSeriesVersion ctx dv.Id
         | None, _ -> ()
 
-    let addDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) =
+
+
+    /// <summary>
+    /// Add a new draft series version to the store.
+    /// This will check if the previous draft version matches the new one.
+    /// If so it no new draft version will be added unless the force parameter is true.
+    /// </summary>
+    /// <param name="ctx"></param>
+    /// <param name="newVersion"></param>
+    /// <param name="force">Skip the diff check and add the new draft version. This can be useful if the check is handled externally.</param>
+    let addDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) (force: bool) =
         ctx.ExecuteInTransactionV2(fun t ->
             let (ms, hash) =
                 match newVersion.IndexBlob with
@@ -202,7 +216,7 @@ module Series =
                     | None -> pv.Version + 1, 1, Some pv.Hash
                 | None -> 1, 1, None
 
-            match compareHashes prevHash hash with
+            match force || compareHashes prevHash hash with
             | true ->
                 let ivi =
                     newVersion.ImageVersion
@@ -241,7 +255,15 @@ module Series =
             | Ok r -> r
             | Error e -> AddVersionResult.Failure(e, None)
 
-    let addVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) =
+    /// <summary>
+    /// A new series version to the store.
+    /// This will check the new version against the previous version and if there are no changes no new version will be added,
+    /// unless the force parameter is true.
+    /// </summary>
+    /// <param name="ctx"></param>
+    /// <param name="newVersion"></param>
+    /// <param name="force"></param>
+    let addVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) (force: bool) =
         ctx.ExecuteInTransactionV2(fun t ->
             let (ms, hash) =
                 match newVersion.IndexBlob with
@@ -270,7 +292,7 @@ module Series =
                     | None -> pv.Version + 1, Some pv.Hash
                 | None -> 1, None
 
-            match compareHashes prevHash hash with
+            match force || compareHashes prevHash hash with
             | true ->
                 let ivi =
                     newVersion.ImageVersion
