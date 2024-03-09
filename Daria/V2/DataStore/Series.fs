@@ -1,10 +1,11 @@
 ﻿namespace Daria.V2.DataStore
 
 open Daria.V2.DataStore.Common
+open Daria.V2.DataStore.Models
 open Daria.V2.DataStore.Persistence
 
-
-
+// No warn for "internal use" warnings.
+#nowarn "100001"
 
 
 [<RequireQualifiedAccess>]
@@ -33,6 +34,9 @@ module Series =
               Hash: string
               Active: bool
               Draft: bool }
+
+            static member SelectSql() =
+                "SELECT id, version, hash, active, draft FROM series_versions"
 
         let fetchTopLevelSeries (ctx: SqliteContext) =
             Operations.selectSeriesRecords ctx [ "WHERE parent_series_id IS NULL" ] []
@@ -73,7 +77,7 @@ module Series =
             (draftStatus: DraftStatus)
             =
             let sql =
-                [ "SELECT id, version, hash, active, draft FROM series_versions"
+                [ SeriesVersionListingItem.SelectSql()
                   "WHERE series_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -93,7 +97,7 @@ module Series =
             =
 
             let sql =
-                [ "SELECT id, version, active, draft FROM series_versions"
+                [ SeriesVersionListingItem.SelectSql()
                   "WHERE series_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -107,6 +111,11 @@ module Series =
 
             ctx.SelectSingleAnon<SeriesVersionListingItem>(sql, [ seriesId ])
 
+        let fetchVersionListingById (ctx: SqliteContext) (versionId: string) =
+            let sql = [ SeriesVersionListingItem.SelectSql(); "WHERE id = @0" ] |> toSql
+
+            ctx.SelectSingleAnon<SeriesVersionListingItem>(sql, [ versionId ])
+
         let deleteSeriesVersion (ctx: SqliteContext) (seriesVersionId: string) =
             ctx.ExecuteVerbatimNonQueryAnon("DELETE FROM series_versions WHERE id = @0", [ seriesVersionId ])
             |> ignore
@@ -118,6 +127,9 @@ module Series =
     let exists (ctx: SqliteContext) (seriesId: string) =
         Operations.selectSeriesRecord ctx [ "WHERE id = @0;" ] [ seriesId ]
         |> Option.isSome
+
+    let versionExists (ctx: SqliteContext) (versionId: string) =
+        Internal.fetchVersionListingById ctx versionId |> Option.isSome
 
     let list (ctx: SqliteContext) =
         let rec build (series: Records.Series list) =
@@ -159,7 +171,26 @@ module Series =
         | Some dv, None -> Internal.deleteSeriesVersion ctx dv.Id
         | None, _ -> ()
 
+    let add (ctx: SqliteContext) (newSeries: NewSeries) =
+        let id = newSeries.Id.ToString()
 
+        match exists ctx id |> not with
+        | true ->
+            let addHandler () =
+                ({ Id = id
+                   Name = newSeries.Name
+                   ParentSeriesId = newSeries.ParentId
+                   SeriesOrder = newSeries.SeriesOrder
+                   CreatedOn = DateTime.UtcNow
+                   Active = true }: Parameters.NewSeries) |> Operations.insertSeries ctx
+                
+                AddResult.Success id
+
+            match newSeries.ParentId with
+            | Some parentId when exists ctx parentId -> addHandler ()
+            | Some parentId -> AddResult.MissingRelatedEntity("parent_series", parentId)
+            | None -> addHandler ()
+        | false -> AddResult.AlreadyExists id
 
     /// <summary>
     /// Add a new draft series version to the store.
@@ -170,21 +201,22 @@ module Series =
     /// <param name="newVersion"></param>
     /// <param name="force">Skip the diff check and add the new draft version. This can be useful if the check is handled externally.</param>
     let addDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) (force: bool) =
-        ctx.ExecuteInTransactionV2(fun t ->
-            let (ms, hash) =
-                match newVersion.IndexBlob with
-                | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
-                | Blob.Stream stream ->
-                    let ms = stream |> toMemoryStream
-                    ms, ms.GetSHA256Hash()
-                | Blob.Text t ->
-                    use ms = new MemoryStream(t.ToUtf8Bytes())
-                    ms, ms.GetSHA256Hash()
-                | Blob.Bytes b ->
-                    use ms = new MemoryStream(b)
-                    ms, ms.GetSHA256Hash()
+        let id = newVersion.Id.ToString()
 
-            (*
+        let (ms, hash) =
+            match newVersion.IndexBlob with
+            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+            | Blob.Stream stream ->
+                let ms = stream |> toMemoryStream
+                ms, ms.GetSHA256Hash()
+            | Blob.Text t ->
+                use ms = new MemoryStream(t.ToUtf8Bytes())
+                ms, ms.GetSHA256Hash()
+            | Blob.Bytes b ->
+                use ms = new MemoryStream(b)
+                ms, ms.GetSHA256Hash()
+
+        (*
             let version, draftVersion, prevHash =
                 match
                     Internal.fetchLatestVersionListing t newVersion.SeriesId ActiveStatus.Active DraftStatus.Draft,
@@ -204,56 +236,51 @@ module Series =
                 | None, None -> 1, Some 1, None
             *)
 
-            // Check if the previous version is a draft (or exists).
-            // If it was use it's version number and increment the draft version.
-            // If it wasn't increment the version number and reset the draft number.
-            // If it doesn't exist start at the beginning.
-            let version, draftVersion, prevHash =
-                match fetchLatestVersionListing t newVersion.SeriesId ActiveStatus.Active DraftStatus.All with
-                | Some pv ->
-                    match pv.DraftVersion with
-                    | Some dv -> pv.Version, dv + 1, Some pv.Hash
-                    | None -> pv.Version + 1, 1, Some pv.Hash
-                | None -> 1, 1, None
+        // Check if the previous version is a draft (or exists).
+        // If it was use it's version number and increment the draft version.
+        // If it wasn't increment the version number and reset the draft number.
+        // If it doesn't exist start at the beginning.
+        let version, draftVersion, prevHash =
+            match fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.All with
+            | Some pv ->
+                match pv.DraftVersion with
+                | Some dv -> pv.Version, dv + 1, Some pv.Hash
+                | None -> pv.Version + 1, 1, Some pv.Hash
+            | None -> 1, 1, None
 
-            match force || compareHashes prevHash hash with
-            | true ->
-                let ivi =
-                    newVersion.ImageVersion
-                    |> Option.bind (function
-                        | RelatedEntity.Specified id -> Some id
-                        | RelatedEntity.Lookup version ->
-                            match version with
-                            | Specific(id, version) -> Images.Internal.getSpecificVersion t id version
-                            | Latest id -> Images.Internal.getLatestVersion t id
-                            |> Option.map (fun i -> i.Id)
-                        | RelatedEntity.Bespoke fn -> fn ctx)
+        match versionExists ctx id |> not, force || compareHashes prevHash hash with
+        | true, true ->
+            let ivi =
+                newVersion.ImageVersion
+                |> Option.bind (function
+                    | RelatedEntityVersion.Specified id -> Some id
+                    | RelatedEntityVersion.Lookup version ->
+                        match version with
+                        | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
+                        | Latest id -> Images.Internal.getLatestVersion ctx id
+                        |> Option.map (fun i -> i.Id)
+                    | RelatedEntityVersion.Bespoke fn -> fn ctx)
 
-                let id = newVersion.Id.ToString()
+            ({ Id = id
+               SeriesId = newVersion.SeriesId
+               Version = version
+               DraftVersion = Some draftVersion
+               Title = newVersion.Title
+               TitleSlug =
+                 newVersion.TitleSlug
+                 |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
+               Description = newVersion.Description
+               IndexBlob = BlobField.FromStream ms
+               Hash = hash
+               ImageVersionId = ivi
+               CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
+               Active = true }
+            : Parameters.NewSeriesVersion)
+            |> Operations.insertSeriesVersion ctx
 
-                ({ Id = id
-                   SeriesId = newVersion.SeriesId
-                   Version = version
-                   DraftVersion = Some draftVersion
-                   Title = newVersion.Title
-                   TitleSlug =
-                     newVersion.TitleSlug
-                     |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
-                   Description = newVersion.Description
-                   IndexBlob = BlobField.FromStream ms
-                   Hash = hash
-                   ImageVersionId = ivi
-                   CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
-                   Active = true }
-                : Parameters.NewSeriesVersion)
-                |> Operations.insertSeriesVersion t
-
-                AddVersionResult.Success id
-            | false -> AddVersionResult.NotChange
-            |> Ok)
-        |> function
-            | Ok r -> r
-            | Error e -> AddVersionResult.Failure(e, None)
+            AddResult.Success id
+        | false, _ -> AddResult.AlreadyExists id
+        | _, false -> AddResult.NoChange id
 
     /// <summary>
     /// A new series version to the store.
@@ -264,69 +291,65 @@ module Series =
     /// <param name="newVersion"></param>
     /// <param name="force"></param>
     let addVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) (force: bool) =
-        ctx.ExecuteInTransactionV2(fun t ->
-            let (ms, hash) =
-                match newVersion.IndexBlob with
-                | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
-                | Blob.Stream stream ->
-                    let ms = stream |> toMemoryStream
-                    ms, ms.GetSHA256Hash()
-                | Blob.Text t ->
-                    use ms = new MemoryStream(t.ToUtf8Bytes())
-                    ms, ms.GetSHA256Hash()
-                | Blob.Bytes b ->
-                    use ms = new MemoryStream(b)
-                    ms, ms.GetSHA256Hash()
+        let id = newVersion.Id.ToString()
 
-            let version, prevHash =
-                match
-                    Internal.fetchLatestVersionListing t newVersion.SeriesId ActiveStatus.Active DraftStatus.NotDraft
-                with
-                | Some pv ->
-                    match pv.DraftVersion with
-                    | Some _ ->
-                        // Return the previous version's version because it was a draft so no need to increment it.
-                        // Return None as the hash because the previous version was a draft, so this version should be added even if they match.
-                        // This currently doesn't check the last non draft version. It could do but this can be added later.
-                        pv.Version, None
-                    | None -> pv.Version + 1, Some pv.Hash
-                | None -> 1, None
+        let ms, hash =
+            match newVersion.IndexBlob with
+            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+            | Blob.Stream stream ->
+                let ms = stream |> toMemoryStream
+                ms, ms.GetSHA256Hash()
+            | Blob.Text t ->
+                use ms = new MemoryStream(t.ToUtf8Bytes())
+                ms, ms.GetSHA256Hash()
+            | Blob.Bytes b ->
+                use ms = new MemoryStream(b)
+                ms, ms.GetSHA256Hash()
 
-            match force || compareHashes prevHash hash with
-            | true ->
-                let ivi =
-                    newVersion.ImageVersion
-                    |> Option.bind (function
-                        | RelatedEntity.Specified id -> Some id
-                        | RelatedEntity.Lookup version ->
-                            match version with
-                            | Specific(id, version) -> Images.Internal.getSpecificVersion t id version
-                            | Latest id -> Images.Internal.getLatestVersion t id
-                            |> Option.map (fun i -> i.Id)
-                        | RelatedEntity.Bespoke fn -> fn ctx)
+        let version, prevHash =
+            match
+                Internal.fetchLatestVersionListing ctx newVersion.SeriesId ActiveStatus.Active DraftStatus.NotDraft
+            with
+            | Some pv ->
+                match pv.DraftVersion with
+                | Some _ ->
+                    // Return the previous version's version because it was a draft so no need to increment it.
+                    // Return None as the hash because the previous version was a draft, so this version should be added even if they match.
+                    // This currently doesn't check the last non draft version. It could do but this can be added later.
+                    pv.Version, None
+                | None -> pv.Version + 1, Some pv.Hash
+            | None -> 1, None
 
-                let id = newVersion.Id.ToString()
+        match versionExists ctx id |> not, force || compareHashes prevHash hash with
+        | true, true ->
+            let ivi =
+                newVersion.ImageVersion
+                |> Option.bind (function
+                    | RelatedEntityVersion.Specified id -> Some id
+                    | RelatedEntityVersion.Lookup version ->
+                        match version with
+                        | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
+                        | Latest id -> Images.Internal.getLatestVersion ctx id
+                        |> Option.map (fun i -> i.Id)
+                    | RelatedEntityVersion.Bespoke fn -> fn ctx)
 
-                ({ Id = id
-                   SeriesId = newVersion.SeriesId
-                   Version = version
-                   DraftVersion = None
-                   Title = newVersion.Title
-                   TitleSlug =
-                     newVersion.TitleSlug
-                     |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
-                   Description = newVersion.Description
-                   IndexBlob = BlobField.FromStream ms
-                   Hash = hash
-                   ImageVersionId = ivi
-                   CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
-                   Active = true }
-                : Parameters.NewSeriesVersion)
-                |> Operations.insertSeriesVersion t
+            ({ Id = id
+               SeriesId = newVersion.SeriesId
+               Version = version
+               DraftVersion = None
+               Title = newVersion.Title
+               TitleSlug =
+                 newVersion.TitleSlug
+                 |> Option.defaultWith (fun _ -> newVersion.Title |> slugify)
+               Description = newVersion.Description
+               IndexBlob = BlobField.FromStream ms
+               Hash = hash
+               ImageVersionId = ivi
+               CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
+               Active = true }
+            : Parameters.NewSeriesVersion)
+            |> Operations.insertSeriesVersion ctx
 
-                AddVersionResult.Success id
-            | false -> AddVersionResult.NotChange
-            |> Ok)
-        |> function
-            | Ok r -> r
-            | Error e -> AddVersionResult.Failure(e, None)
+            AddResult.Success id
+        | false, _ -> AddResult.AlreadyExists id
+        | _, false -> AddResult.NoChange id
