@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 08/03/2024 19:58:10 (utc) via Freql.Tools.
+/// Module generated on 10/03/2024 11:20:50 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -121,7 +121,7 @@ module Records =
           [<JsonPropertyName("rawLink")>] RawLink: string option
           [<JsonPropertyName("overrideCssName")>] OverrideCssName: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
-          [<JsonPropertyName("publishedOn")>] PublishedOn: bool option
+          [<JsonPropertyName("publishedOn")>] PublishedOn: DateTime option
           [<JsonPropertyName("active")>] Active: bool }
     
         static member Blank() =
@@ -845,7 +845,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 08/03/2024 19:58:10 (utc) via Freql.Tools.
+/// Module generated on 10/03/2024 11:20:50 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -901,7 +901,7 @@ module Parameters =
           [<JsonPropertyName("rawLink")>] RawLink: string option
           [<JsonPropertyName("overrideCssName")>] OverrideCssName: string option
           [<JsonPropertyName("createdOn")>] CreatedOn: DateTime
-          [<JsonPropertyName("publishedOn")>] PublishedOn: bool option
+          [<JsonPropertyName("publishedOn")>] PublishedOn: DateTime option
           [<JsonPropertyName("active")>] Active: bool }
     
         static member Blank() =
@@ -1184,7 +1184,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 08/03/2024 19:58:10 (utc) via Freql.Tools.
+/// Module generated on 10/03/2024 11:20:50 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
