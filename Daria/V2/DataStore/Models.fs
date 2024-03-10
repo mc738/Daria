@@ -32,6 +32,7 @@ module Models =
 
     and SeriesVersionOverview =
         { Id: string
+          SeriesId: string
           Version: int
           DraftVersion: int option
           Title: string
@@ -59,6 +60,15 @@ module Models =
           CreatedOn: DateTime option
           Tags: string list
           Metadata: Map<string, string> }
+      
+    type ArticleListingItem =
+        { Id: string
+          Name: string
+          SeriesId: string
+          Order: int
+          CreatedOn: DateTime
+          Active: bool
+          Versions: ArticleVersionOverview list }
         
     and ArticleOverview =
         { Id: string
@@ -70,6 +80,7 @@ module Models =
 
     and ArticleVersionOverview =
         { Id: string
+          ArticleId: string
           Version: int
           DraftVersion: int option
           Title: string
@@ -95,7 +106,7 @@ module Models =
           Description: string
           ArticleBlob: Blob
           ImageVersion: RelatedEntityVersion option
-          RawLink: string
+          RawLink: string option
           OverrideCss: string option
           CreatedOn: DateTime option
           PublishedOn: DateTime option
