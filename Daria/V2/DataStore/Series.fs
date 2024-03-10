@@ -36,7 +36,7 @@ module Series =
               Draft: bool }
 
             static member SelectSql() =
-                "SELECT id, version, hash, active, draft FROM series_versions"
+                "SELECT id, version, draft_version, hash, active FROM series_versions"
 
         let fetchTopLevelSeries (ctx: SqliteContext) =
             Operations.selectSeriesRecords ctx [ "WHERE parent_series_id IS NULL" ] []
@@ -116,9 +116,22 @@ module Series =
 
             ctx.SelectSingleAnon<SeriesVersionListingItem>(sql, [ versionId ])
 
-        let deleteSeriesVersion (ctx: SqliteContext) (seriesVersionId: string) =
-            ctx.ExecuteVerbatimNonQueryAnon("DELETE FROM series_versions WHERE id = @0", [ seriesVersionId ])
+        let deleteSeriesVersion (ctx: SqliteContext) (versionId: string) =
+            ctx.ExecuteVerbatimNonQueryAnon("DELETE FROM series_versions WHERE id = @0", [ versionId ])
             |> ignore
+
+        let addVersionTag (ctx: SqliteContext) (versionId: string) (tag: string) =
+            ({ SeriesVersionId = versionId
+               Tag = tag }
+            : Parameters.NewSeriesVersionTag)
+            |> Operations.insertSeriesVersionTag ctx
+
+        let addVersionMetadata (ctx: SqliteContext) (versionId: string) (key: string) (value: string) =
+            ({ SeriesVersionId = versionId
+               ItemKey = key
+               ItemValue = value }
+            : Parameters.NewSeriesVersionMetadataItem)
+            |> Operations.insertSeriesVersionMetadataItem ctx
 
     open Internal
 
@@ -130,6 +143,16 @@ module Series =
 
     let versionExists (ctx: SqliteContext) (versionId: string) =
         Internal.fetchVersionListingById ctx versionId |> Option.isSome
+
+    let addVersionTags (ctx: SqliteContext) (versionId: string) (tags: string list) =
+        tags
+        |> List.iter (fun t ->
+            // Check tag already exists. If not add it.
+            match Tags.exists ctx t with
+            | true -> ()
+            | false -> Tags.add ctx t
+
+            addVersionTag ctx versionId t)
 
     let list (ctx: SqliteContext) =
         let rec build (series: Records.Series list) =
@@ -182,8 +205,10 @@ module Series =
                    ParentSeriesId = newSeries.ParentId
                    SeriesOrder = newSeries.SeriesOrder
                    CreatedOn = DateTime.UtcNow
-                   Active = true }: Parameters.NewSeries) |> Operations.insertSeries ctx
-                
+                   Active = true }
+                : Parameters.NewSeries)
+                |> Operations.insertSeries ctx
+
                 AddResult.Success id
 
             match newSeries.ParentId with
@@ -248,8 +273,8 @@ module Series =
                 | None -> pv.Version + 1, 1, Some pv.Hash
             | None -> 1, 1, None
 
-        match versionExists ctx id |> not, force || compareHashes prevHash hash with
-        | true, true ->
+        match exists ctx newVersion.SeriesId, versionExists ctx id |> not, force || compareHashes prevHash hash with
+        | true, true, true ->
             let ivi =
                 newVersion.ImageVersion
                 |> Option.bind (function
@@ -278,9 +303,13 @@ module Series =
             : Parameters.NewSeriesVersion)
             |> Operations.insertSeriesVersion ctx
 
+            addVersionTags ctx id newVersion.Tags
+            newVersion.Metadata |> Map.iter (addVersionMetadata ctx id)
+
             AddResult.Success id
-        | false, _ -> AddResult.AlreadyExists id
-        | _, false -> AddResult.NoChange id
+        | false, _, _ -> AddResult.MissingRelatedEntity("series", newVersion.SeriesId)
+        | _, false, _ -> AddResult.AlreadyExists id
+        | _, _, false -> AddResult.NoChange id
 
     /// <summary>
     /// A new series version to the store.
@@ -320,8 +349,8 @@ module Series =
                 | None -> pv.Version + 1, Some pv.Hash
             | None -> 1, None
 
-        match versionExists ctx id |> not, force || compareHashes prevHash hash with
-        | true, true ->
+        match exists ctx newVersion.SeriesId, versionExists ctx id |> not, force || compareHashes prevHash hash with
+        | true, true, true ->
             let ivi =
                 newVersion.ImageVersion
                 |> Option.bind (function
@@ -350,6 +379,10 @@ module Series =
             : Parameters.NewSeriesVersion)
             |> Operations.insertSeriesVersion ctx
 
+            addVersionTags ctx id newVersion.Tags
+            newVersion.Metadata |> Map.iter (addVersionMetadata ctx id)
+
             AddResult.Success id
-        | false, _ -> AddResult.AlreadyExists id
-        | _, false -> AddResult.NoChange id
+        | false, _, _ -> AddResult.MissingRelatedEntity("series", newVersion.SeriesId)
+        | _, false, _ -> AddResult.AlreadyExists id
+        | _, _, false -> AddResult.NoChange id
