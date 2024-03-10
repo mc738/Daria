@@ -87,7 +87,7 @@ module Series =
                   | None -> () ]
                 |> toSql
 
-            ctx.SelectAnon<SeriesVersionOverview>(sql, [ seriesId ])
+            ctx.SelectAnon<SeriesVersionListingItem>(sql, [ seriesId ])
 
         let fetchLatestVersionListing
             (ctx: SqliteContext)
@@ -135,7 +135,9 @@ module Series =
 
     open Internal
 
-    let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) = Internal.fetchSeriesVersions
+    let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) =
+        // TODO finish
+        Internal.fetchSeriesVersions
 
     let exists (ctx: SqliteContext) (seriesId: string) =
         Operations.selectSeriesRecord ctx [ "WHERE id = @0;" ] [ seriesId ]
