@@ -5,10 +5,13 @@ open System.IO
 open Freql.Sqlite
 open FsToolbox.Extensions.Strings
 
+#nowarn "100001"
+
 module Common =
 
     let storeVersion = "2"
 
+    [<CompilerMessage("Type should only be used for internal use", 100001)>]
     type IdType =
         | Generated
         | Specific of string
@@ -16,8 +19,8 @@ module Common =
 
         member id.Generate() =
             match id with
-            | Generated -> System.Guid.NewGuid().ToString("n") |> IdType.Specific
-            | Specific s -> id
+            | Generated -> Guid.NewGuid().ToString("n") |> IdType.Specific
+            | Specific _ -> id
             | Bespoke unitFunc -> unitFunc () |> IdType.Specific
 
         member id.IsSpecified() =
@@ -32,10 +35,11 @@ module Common =
 
         override id.ToString() =
             match id with
-            | Generated -> System.Guid.NewGuid().ToString("n")
+            | Generated -> Guid.NewGuid().ToString("n")
             | Specific s -> s
             | Bespoke unitFunc -> unitFunc ()
 
+    [<CompilerMessage("Type should only be used for internal use", 100001)>]
     [<RequireQualifiedAccess>]
     type ActiveStatus =
         | Active
@@ -56,6 +60,7 @@ module Common =
             | ActiveStatus.Inactive -> Some $"{pf}active = FALSE"
             | ActiveStatus.All -> None
 
+    [<CompilerMessage("Type should only be used for internal use", 100001)>]
     [<RequireQualifiedAccess>]
     type DraftStatus =
         | Draft
@@ -77,11 +82,18 @@ module Common =
             | DraftStatus.All -> None
 
     [<RequireQualifiedAccess>]
-    type AddVersionResult =
+    type AddResult =
         | Success of Id: string
-        | NotChange
+        /// <summary>
+        /// Represents and item that has no changes to the previous version.
+        /// </summary>
+        | NoChange of Id: string
+        /// <summary>
+        /// Represents an item that already exists. Normally this will make the item's id already exists.
+        /// </summary>
+        | AlreadyExists of Id: string
+        | MissingRelatedEntity of EntityType: string * Id: string
         | Failure of Message: string * Exception: exn option
-
 
     /// <summary>
     /// Represents data to be saved as a blob.
@@ -89,6 +101,7 @@ module Common =
     /// A prepared blob blob will have data in a memory stream and a precomputed hash.
     /// A unprepared blob will be a raw string
     /// </summary>
+    [<CompilerMessage("Type should only be used for internal use", 100001)>]
     [<RequireQualifiedAccess>]
     type Blob =
         | Prepared of Stream: MemoryStream * Hash: string
@@ -96,6 +109,7 @@ module Common =
         | Text of string
         | Bytes of Byte array
 
+    [<CompilerMessage("Type should only be used for internal use", 100001)>]
     type EntityVersion =
         | Specific of Id: string * Version: int
         | Latest of Id: string
@@ -104,8 +118,9 @@ module Common =
     /// A union type to definite related entities.
     /// Because a related entity could be predefined or require a look up this is used to model relationships
     /// </summary>
+    [<CompilerMessage("Type should only be used for internal use", 100001)>]
     [<RequireQualifiedAccess>]
-    type RelatedEntity =
+    type RelatedEntityVersion =
         | Lookup of Version: EntityVersion
         | Specified of Id: string
         | Bespoke of (SqliteContext -> string option)
