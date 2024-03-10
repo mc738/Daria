@@ -204,7 +204,7 @@ module Series =
                    Name = newSeries.Name
                    ParentSeriesId = newSeries.ParentId
                    SeriesOrder = newSeries.SeriesOrder
-                   CreatedOn = DateTime.UtcNow
+                   CreatedOn = newSeries.CreatedOn |> Option.defaultValue DateTime.UtcNow
                    Active = true }
                 : Parameters.NewSeries)
                 |> Operations.insertSeries ctx
