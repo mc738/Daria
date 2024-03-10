@@ -9,11 +9,10 @@ module Models =
     open Daria.V2.DataStore.Persistence
 
     type ImageVersionDetails =
-        {
-            Id: string
-            
+        { Id: string
+
         }
-    
+
     type SeriesListingItem =
         { Id: string
           Name: string
@@ -34,13 +33,20 @@ module Models =
     and SeriesVersionOverview =
         { Id: string
           Version: int
+          DraftVersion: int option
           Title: string
           TitleSlug: string
           Description: string
           Hash: string
           CreatedOn: DateTime
-          Active: bool
-          Draft: bool }
+          Active: bool }
+
+    type NewSeries =
+        { Id: IdType
+          Name: string
+          ParentId: string option
+          SeriesOrder: int
+          CreatedOn: DateTime option }
 
     type NewSeriesVersion =
         { Id: IdType
@@ -49,7 +55,51 @@ module Models =
           TitleSlug: string option
           Description: string
           IndexBlob: Blob
-          ImageVersion: RelatedEntity option
+          ImageVersion: RelatedEntityVersion option
+          CreatedOn: DateTime option
+          Tags: string list
+          Metadata: Map<string, string> }
+        
+    and ArticleOverview =
+        { Id: string
+          Name: string
+          SeriesId: string
+          Order: int
+          CreatedOn: DateTime
+          Active: bool }
+
+    and ArticleVersionOverview =
+        { Id: string
+          Version: int
+          DraftVersion: int option
+          Title: string
+          TitleSlug: string
+          Description: string
+          Hash: string
+          CreatedOn: DateTime
+          PublishedOn: DateTime
+          Active: bool }
+
+    type NewArticle =
+        { Id: IdType
+          Name: string
+          SeriesId: string
+          ArticleOrder: int
           CreatedOn: DateTime option }
 
+    type NewArticleVersion =
+        { Id: IdType
+          ArticleId: string
+          Title: string
+          TitleSlug: string option
+          Description: string
+          ArticleBlob: Blob
+          ImageVersion: RelatedEntityVersion option
+          RawLink: string
+          OverrideCss: string option
+          CreatedOn: DateTime option
+          PublishedOn: DateTime option
+          Tags: string list
+          Metadata: Map<string, string> }
+    
     type ResourceVersionOverview = { Id: string }
