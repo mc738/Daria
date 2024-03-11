@@ -45,7 +45,6 @@ module Import =
             let (imd, _) = ifc.Split Environment.NewLine |> List.ofSeq |> Parser.ExtractMetadata
             let dirName = DirectoryInfo(path).Name
 
-
             // Handle the metadata.
 
             let seriesId =
@@ -56,7 +55,10 @@ module Import =
 
             let seriesResult =
                 ({ Id = IdType.Specific seriesId
-                   Name = failwith "todo"
+                   Name =
+                     imd.TryFind Keys.seriesName
+                     |> Option.orElseWith (fun _ -> imd.TryFind Keys.title)
+                     |> Option.defaultValue dirName
                    ParentId = parentId
                    SeriesOrder = imd.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
                    CreatedOn =
@@ -76,7 +78,7 @@ module Import =
                         | None -> EntityVersion.Latest iid
                         |> RelatedEntityVersion.Lookup))
 
-            let indexResult =
+            let newVersion =
                 ({ Id = IdType.Generated
                    SeriesId = seriesId
                    Title = imd.TryFind Keys.title |> Option.defaultValue dirName
@@ -88,19 +90,72 @@ module Import =
                    Tags = imd.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
                    Metadata = imd }
                 : Models.NewSeriesVersion)
-                |> Series.addVersion ctx false
+
+            let indexResult =
+                match imd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
+                | true -> Series.addDraftVersion ctx false newVersion
+                | false -> Series.addVersion ctx false newVersion
 
             let fileResults =
                 Directory.EnumerateFiles(path)
                 |> Seq.filter (fun fi -> settings.IgnorePatterns |> List.exists (fun ip -> ip.IsMatch fi) |> not)
-                |> Seq.map (fun fi ->
-                    let fileContents = File.ReadAllLines fi |> List.ofArray
+                |> List.ofSeq
+                |> List.map (fun fi ->
+                    let afc = File.ReadAllText fi //|> List.ofArray
 
-                    let (metadata, _) = Parser.ExtractMetadata fileContents
+                    let (amd, _) = Parser.ExtractMetadata (afc.Split Environment.NewLine |> List.ofArray)
 
+                    let fileName = Path.GetFileNameWithoutExtension(fi)
 
+                    let articleId =
+                        amd.TryFind Keys.articleId
+                        |> Option.orElseWith (fun _ -> amd.TryFind Keys.titleSlug)
+                        |> Option.orElseWith (fun _ -> amd.TryFind Keys.title |> Option.map slugify)
+                        |> Option.defaultValue (slugify dirName)
 
-                    ())
+                    let articleImageVersion =
+                        imd.TryFind Keys.imageVersionId
+                        |> Option.map (RelatedEntityVersion.Specified)
+                        |> Option.orElseWith (fun _ ->
+                            imd.TryFind Keys.imageId
+                            |> Option.map (fun iid ->
+                                match imd.TryFind Keys.imageVersion |> Option.bind tryToInt with
+                                | Some v -> EntityVersion.Specific(iid, v)
+                                | None -> EntityVersion.Latest iid
+                                |> RelatedEntityVersion.Lookup))
+
+                    let articleResult =
+                        ({ Id = IdType.Specific articleId
+                           Name =
+                             amd.TryFind Keys.articleName
+                             |> Option.orElseWith (fun _ -> amd.TryFind Keys.title)
+                             |> Option.defaultValue dirName
+                           SeriesId = seriesId
+                           ArticleOrder = failwith "todo"
+                           CreatedOn = failwith "todo" }
+                        : Models.NewArticle)
+                        |> Articles.add ctx
+
+                    let newArticleVersion =
+                        ({ Id = IdType.Generated
+                           ArticleId = articleId
+                           Title = amd.TryFind Keys.title |> Option.defaultValue dirName
+                           TitleSlug = imd.TryFind Keys.titleSlug
+                           Description = failwith "todo"
+                           ArticleBlob = Blob.Text afc
+                           ImageVersion = articleImageVersion
+                           RawLink = failwith "todo"
+                           OverrideCss = failwith "todo"
+                           CreatedOn = failwith "todo"
+                           PublishedOn = failwith "todo"
+                           Tags = amd.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
+                           Metadata = amd }
+                        : Models.NewArticleVersion)
+
+                    match amd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
+                    | true -> Articles.addDraftVersion ctx false newArticleVersion
+                    | false -> Articles.addVersion ctx false newArticleVersion
+                    |> fun r -> { Path = fi; Result = r })
 
             let directoryResults =
                 Directory.EnumerateDirectories(path)
@@ -110,10 +165,10 @@ module Import =
 
             ({ IndexResult = indexResult
                Results = fileResults
-               ChildrenResults = directoryResults }: ImportDirectorySuccessResult)
+               ChildrenResults = directoryResults }
+            : ImportDirectorySuccessResult)
             |> ImportDirectoryResult.Success
         | false -> ImportDirectoryResult.Skipped $"Missing `{settings.IndexFileName}` file."
-
 
     let run _ =
 
