@@ -11,7 +11,13 @@ module Metadata =
         let prefix = "daria"
 
         let seriesId = $"{prefix}:series_id"
+        
+        let seriesName = $"{prefix}:series_name"
+        
+        let articleId = $"{prefix}:article_id"
 
+        let articleName = $"{prefix}:article_name"
+        
         let draft = $"{prefix}:draft"
 
         let imageId = $"{prefix}:image_id"
