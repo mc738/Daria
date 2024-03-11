@@ -212,6 +212,8 @@ module Series =
                 |> Operations.insertSeries ctx
 
                 AddResult.Success id
+                
+            // TODO if it exists check of parent is the same. If not update.
 
             match newSeries.ParentId with
             | Some parentId when exists ctx parentId -> addHandler ()
@@ -227,7 +229,7 @@ module Series =
     /// <param name="ctx"></param>
     /// <param name="newVersion"></param>
     /// <param name="force">Skip the diff check and add the new draft version. This can be useful if the check is handled externally.</param>
-    let addDraftVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) (force: bool) =
+    let addDraftVersion (ctx: SqliteContext) (force: bool) (newVersion: NewSeriesVersion) =
         let id = newVersion.Id.ToString()
 
         let (ms, hash) =
@@ -280,7 +282,9 @@ module Series =
             let ivi =
                 newVersion.ImageVersion
                 |> Option.bind (function
-                    | RelatedEntityVersion.Specified id -> Some id
+                    | RelatedEntityVersion.Specified id ->
+                        // TODO should this check the image version exists?
+                        Some id
                     | RelatedEntityVersion.Lookup version ->
                         match version with
                         | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
@@ -321,7 +325,7 @@ module Series =
     /// <param name="ctx"></param>
     /// <param name="newVersion"></param>
     /// <param name="force"></param>
-    let addVersion (ctx: SqliteContext) (newVersion: NewSeriesVersion) (force: bool) =
+    let addVersion (ctx: SqliteContext) (force: bool) (newVersion: NewSeriesVersion) =
         let id = newVersion.Id.ToString()
 
         let ms, hash =
