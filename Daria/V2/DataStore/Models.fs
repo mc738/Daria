@@ -1,17 +1,13 @@
 ﻿namespace Daria.V2.DataStore
 
-open System
-open System.IO
-open Daria.V2.DataStore.Common
+#nowarn "100001"
 
 module Models =
 
-    open Daria.V2.DataStore.Persistence
+    open System
+    open Daria.V2.DataStore.Common
 
-    type ImageVersionDetails =
-        { Id: string
-
-        }
+    type ImageVersionDetails = { Id: string }
 
     type SeriesListingItem =
         { Id: string
@@ -60,7 +56,7 @@ module Models =
           CreatedOn: DateTime option
           Tags: string list
           Metadata: Map<string, string> }
-      
+
     type ArticleListingItem =
         { Id: string
           Name: string
@@ -69,7 +65,7 @@ module Models =
           CreatedOn: DateTime
           Active: bool
           Versions: ArticleVersionOverview list }
-        
+
     and ArticleOverview =
         { Id: string
           Name: string
@@ -112,5 +108,5 @@ module Models =
           PublishedOn: DateTime option
           Tags: string list
           Metadata: Map<string, string> }
-    
+
     type ResourceVersionOverview = { Id: string }
