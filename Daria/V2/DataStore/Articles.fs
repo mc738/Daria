@@ -213,7 +213,7 @@ module Articles =
     /// <param name="ctx"></param>
     /// <param name="newVersion"></param>
     /// <param name="force">Skip the diff check and add the new draft version. This can be useful if the check is handled externally.</param>
-    let addDraftVersion (ctx: SqliteContext) (newVersion: NewArticleVersion) (force: bool) =
+    let addDraftVersion (ctx: SqliteContext)  (force: bool) (newVersion: NewArticleVersion) =
         let id = newVersion.Id.ToString()
 
         let (ms, hash) =
@@ -309,7 +309,7 @@ module Articles =
     /// <param name="ctx"></param>
     /// <param name="newVersion"></param>
     /// <param name="force"></param>
-    let addVersion (ctx: SqliteContext) (newVersion: NewArticleVersion) (force: bool) =
+    let addVersion (ctx: SqliteContext) (force: bool) (newVersion: NewArticleVersion) =
         let id = newVersion.Id.ToString()
 
         let ms, hash =
