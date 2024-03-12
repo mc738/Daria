@@ -201,8 +201,10 @@ module Import =
                              |> Option.orElseWith (fun _ -> amd.TryFind Keys.title)
                              |> Option.defaultValue dirName
                            SeriesId = seriesId
-                           ArticleOrder = failwith "todo"
-                           CreatedOn = failwith "todo" }
+                           ArticleOrder = amd.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
+                           CreatedOn =
+                               amd.TryFind Keys.createdOn
+                               |> Option.bind (tryToDateTime settings.DateTimeFormats) }
                         : Models.NewArticle)
                         |> Articles.add ctx
 
