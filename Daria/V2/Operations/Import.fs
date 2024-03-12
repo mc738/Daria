@@ -167,8 +167,7 @@ module Import =
 
                     let input = Input.Create(rest)
 
-                    let (rawTitle, rawDescription) =
-                        tryGetTitleAndDescription rest
+                    let (rawArticleTitle, rawArticleDescription) = tryGetTitleAndDescription rest
 
                     let fileName = Path.GetFileNameWithoutExtension(fi)
 
@@ -204,9 +203,12 @@ module Import =
                     let newArticleVersion =
                         ({ Id = IdType.Generated
                            ArticleId = articleId
-                           Title = amd.TryFind Keys.title |> Option.defaultValue dirName
+                           Title =
+                             amd.TryFind Keys.title
+                             |> Option.orElse rawArticleTitle
+                             |> Option.defaultValue dirName
                            TitleSlug = imd.TryFind Keys.titleSlug
-                           Description = failwith "todo"
+                           Description = rawArticleDescription |> Option.defaultValue ""
                            ArticleBlob = Blob.Text afc
                            ImageVersion = articleImageVersion
                            RawLink = failwith "todo"
