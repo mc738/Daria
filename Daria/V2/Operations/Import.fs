@@ -4,7 +4,10 @@
 
 open System
 open System.IO
+open System.Text
 open Daria.V2.DataStore.Common
+open FDOM.Core.Common.Formatting
+open FDOM.Core.Parsing.BlockParser
 open Microsoft.FSharp.Core
 
 [<RequireQualifiedAccess>]
@@ -34,7 +37,60 @@ module Import =
         { IndexResult: AddResult
           Results: ImportResult list
           ChildrenResults: ImportDirectoryResult list }
+        
+    module Internal =
+        
+        let private formatBlockText (preprocessors: Formatters) (formatters: Formatters) (lines: Line list) =
+            let sb =
+                lines
+                |> List.fold
+                    (fun (sb: StringBuilder) l ->
+                        sb.Append(preprocessors.Run(l.Text)) |> ignore
+                        sb)
+                    (StringBuilder())
 
+            formatters.Run(sb.ToString())
+            
+        let extractTitleAndDescription (lines: string list) =
+            let input = Input.Create(lines)
+            
+            let formatter =
+                formatBlockText (Formatters.DefaultPreprocessors()) (Formatters.DefaultFormatters())
+            
+            let rec tryGetHeader (i: int) =
+                match input.TryGetLine i, BlockParser.tryParseHeaderBlock input i with
+                | Some _, Ok (bt, newI) -> Some(bt, newI)
+                | Some _, Error _ -> tryGetHeader (i + 1)
+                | None, _ -> None
+                
+            let rec tryGetDescription (i: int) =
+                match input.TryGetLine i, BlockParser.tryParseParagraph input i with
+                | Some _, Ok (bt, newI) -> Some(bt, newI)
+                | Some _, Error _ -> tryGetHeader (i + 1)
+                | None, _ -> None
+            
+            ()
+
+    [<RequireQualifiedAccess>]
+    module TokenExtractor =
+        
+        type State =
+            { Input: Input
+              CurrentLine: int }
+            
+        
+        let next (state: State) =
+            BlockParser.tryParseBlock state.Input state.CurrentLine
+            |> Option.map (fun (bt, i) -> bt, { state with CurrentLine = i })
+            
+        let tryFind (fn: BlockToken -> bool) (state: State) =
+            let rec handler (i: int) =
+                match tryParseBlock
+        
+        ()
+        
+        
+    
     let rec scanDirectory (ctx: SqliteContext) (settings: Settings) (parentId: string option) (path: string) =
         // First look for an index file.
         let indexPath = Path.Combine(path, settings.IndexFileName)
@@ -103,8 +159,14 @@ module Import =
                 |> List.map (fun fi ->
                     let afc = File.ReadAllText fi //|> List.ofArray
 
-                    let (amd, _) = Parser.ExtractMetadata (afc.Split Environment.NewLine |> List.ofArray)
+                    let (amd, rest) = Parser.ExtractMetadata (afc.Split Environment.NewLine |> List.ofArray)
 
+                    let input = Input.Create(rest)
+                    
+                    BlockParser.tryParseBlock 
+                    
+                    
+                    
                     let fileName = Path.GetFileNameWithoutExtension(fi)
 
                     let articleId =
