@@ -35,6 +35,8 @@ module Metadata =
         let order = $"{prefix}:order"
         
         let createdOn = $"{prefix}:created_on"
+        
+        let publishedOn = $"{prefix}:published_on"
 
     let tryToBool (value: string) =
         match value.ToLower() with
