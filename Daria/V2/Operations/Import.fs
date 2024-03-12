@@ -38,39 +38,6 @@ module Import =
           Results: ImportResult list
           ChildrenResults: ImportDirectoryResult list }
         
-    module Internal =
-        
-        let private formatBlockText (preprocessors: Formatters) (formatters: Formatters) (lines: Line list) =
-            let sb =
-                lines
-                |> List.fold
-                    (fun (sb: StringBuilder) l ->
-                        sb.Append(preprocessors.Run(l.Text)) |> ignore
-                        sb)
-                    (StringBuilder())
-
-            formatters.Run(sb.ToString())
-            
-        let extractTitleAndDescription (lines: string list) =
-            let input = Input.Create(lines)
-            
-            let formatter =
-                formatBlockText (Formatters.DefaultPreprocessors()) (Formatters.DefaultFormatters())
-            
-            let rec tryGetHeader (i: int) =
-                match input.TryGetLine i, BlockParser.tryParseHeaderBlock input i with
-                | Some _, Ok (bt, newI) -> Some(bt, newI)
-                | Some _, Error _ -> tryGetHeader (i + 1)
-                | None, _ -> None
-                
-            let rec tryGetDescription (i: int) =
-                match input.TryGetLine i, BlockParser.tryParseParagraph input i with
-                | Some _, Ok (bt, newI) -> Some(bt, newI)
-                | Some _, Error _ -> tryGetHeader (i + 1)
-                | None, _ -> None
-            
-            ()
-
     [<RequireQualifiedAccess>]
     module TokenExtractor =
         
@@ -83,11 +50,16 @@ module Import =
             BlockParser.tryParseBlock state.Input state.CurrentLine
             |> Option.map (fun (bt, i) -> bt, { state with CurrentLine = i })
             
-        let tryFind (fn: BlockToken -> bool) (state: State) =
+        let tryFindNext (fn: BlockToken -> bool) (state: State) =
             let rec handler (i: int) =
-                match tryParseBlock
+                match tryParseBlock state.Input state.CurrentLine with
+                | Some (bt, newI) ->
+                    match fn bt with
+                    | true -> Some(bt, { state with CurrentLine = newI })
+                    | false -> handler newI
+                | None -> None
         
-        ()
+            handler state.CurrentLine
         
         
     
