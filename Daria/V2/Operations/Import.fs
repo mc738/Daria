@@ -206,7 +206,7 @@ module Import =
                            Title =
                              amd.TryFind Keys.title
                              |> Option.orElse rawArticleTitle
-                             |> Option.defaultValue dirName
+                             |> Option.defaultValue fileName
                            TitleSlug = imd.TryFind Keys.titleSlug
                            Description = rawArticleDescription |> Option.defaultValue ""
                            ArticleBlob = Blob.Text afc
