@@ -162,12 +162,10 @@ module Import =
                 |> List.map (fun fi ->
                     let afc = File.ReadAllText fi //|> List.ofArray
 
-                    let (amd, rest) =
+                    let (amd, articleLines) =
                         Parser.ExtractMetadata(afc.Split Environment.NewLine |> List.ofArray)
 
-                    let input = Input.Create(rest)
-
-                    let (rawArticleTitle, rawArticleDescription) = tryGetTitleAndDescription rest
+                    let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription articleLines
 
                     let fileName = Path.GetFileNameWithoutExtension(fi)
 
