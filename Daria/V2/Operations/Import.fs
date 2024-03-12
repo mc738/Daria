@@ -37,32 +37,63 @@ module Import =
         { IndexResult: AddResult
           Results: ImportResult list
           ChildrenResults: ImportDirectoryResult list }
-        
+
     [<RequireQualifiedAccess>]
     module TokenExtractor =
-        
-        type State =
-            { Input: Input
-              CurrentLine: int }
-            
-        
+
+        type State = { Input: Input; CurrentLine: int }
+
         let next (state: State) =
             BlockParser.tryParseBlock state.Input state.CurrentLine
             |> Option.map (fun (bt, i) -> bt, { state with CurrentLine = i })
-            
+
         let tryFindNext (fn: BlockToken -> bool) (state: State) =
             let rec handler (i: int) =
                 match tryParseBlock state.Input state.CurrentLine with
-                | Some (bt, newI) ->
+                | Some(bt, newI) ->
                     match fn bt with
                     | true -> Some(bt, { state with CurrentLine = newI })
                     | false -> handler newI
                 | None -> None
-        
+
             handler state.CurrentLine
-        
-        
-    
+
+    let tryGetTitleAndDescription (lines: string list) =
+        let state =
+            ({ Input = Input.Create lines
+               CurrentLine = 0 }
+            : TokenExtractor.State)
+
+        match
+            state
+            |> TokenExtractor.tryFindNext (fun bt ->
+                match bt with
+                | BlockToken.Header _ -> true
+                | _ -> false)
+        with
+        | Some(hbt, newState) ->
+            let headerContent =
+                match hbt with
+                | BlockToken.Header ht -> Some ht
+                | _ -> None
+                |> Option.bind (fun ht -> ht.Split(' ', 2) |> Array.tryItem 1)
+
+            match
+                newState
+                |> TokenExtractor.tryFindNext (fun bt ->
+                    match bt with
+                    | BlockToken.Paragraph _ -> true
+                    | _ -> false)
+            with
+            | Some(pbt, _) ->
+                headerContent,
+                match pbt with
+                | BlockToken.Paragraph pt -> Some pt
+                | _ -> None
+            | None -> headerContent, None
+        | None -> None, None
+
+
     let rec scanDirectory (ctx: SqliteContext) (settings: Settings) (parentId: string option) (path: string) =
         // First look for an index file.
         let indexPath = Path.Combine(path, settings.IndexFileName)
@@ -131,14 +162,14 @@ module Import =
                 |> List.map (fun fi ->
                     let afc = File.ReadAllText fi //|> List.ofArray
 
-                    let (amd, rest) = Parser.ExtractMetadata (afc.Split Environment.NewLine |> List.ofArray)
+                    let (amd, rest) =
+                        Parser.ExtractMetadata(afc.Split Environment.NewLine |> List.ofArray)
 
                     let input = Input.Create(rest)
-                    
-                    BlockParser.tryParseBlock 
-                    
-                    
-                    
+
+                    let (rawTitle, rawDescription) =
+                        tryGetTitleAndDescription rest
+
                     let fileName = Path.GetFileNameWithoutExtension(fi)
 
                     let articleId =
