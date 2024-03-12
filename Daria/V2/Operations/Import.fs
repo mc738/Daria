@@ -101,10 +101,15 @@ module Import =
         match File.Exists(indexPath) with
         | true ->
             let ifc = File.ReadAllText(indexPath)
-            let (imd, _) = ifc.Split Environment.NewLine |> List.ofSeq |> Parser.ExtractMetadata
+
+            let (imd, indexLines) =
+                ifc.Split Environment.NewLine |> List.ofSeq |> Parser.ExtractMetadata
+
             let dirName = DirectoryInfo(path).Name
 
             // Handle the metadata.
+
+            let rawIndexTitle, rawIndexDescription = tryGetTitleAndDescription indexLines
 
             let seriesId =
                 imd.TryFind Keys.seriesId
@@ -140,9 +145,12 @@ module Import =
             let newVersion =
                 ({ Id = IdType.Generated
                    SeriesId = seriesId
-                   Title = imd.TryFind Keys.title |> Option.defaultValue dirName
+                   Title =
+                     imd.TryFind Keys.title
+                     |> Option.orElse rawIndexTitle
+                     |> Option.defaultValue dirName
                    TitleSlug = imd.TryFind Keys.titleSlug
-                   Description = failwith "todo"
+                   Description = rawIndexDescription |> Option.defaultValue ""
                    IndexBlob = Blob.Text ifc
                    ImageVersion = imageVersion
                    CreatedOn = None
