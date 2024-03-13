@@ -120,7 +120,14 @@ module Import =
         |> Series.add ctx
 
 
-    let addSeriesVersion (ctx: SqliteContext) (settings: Settings) (metadata: Map<string, string>) =
+    let addSeriesVersion
+        (ctx: SqliteContext)
+        (settings: Settings)
+        (metadata: Map<string, string>)
+        (seriesId: string)
+        (directoryName: string)
+        (rawText: string)
+        =
         let imageVersion =
             metadata.TryFind Keys.imageVersionId
             |> Option.map (RelatedEntityVersion.Specified)
@@ -138,10 +145,10 @@ module Import =
                Title =
                  metadata.TryFind Keys.title
                  |> Option.orElse rawIndexTitle
-                 |> Option.defaultValue dirName
+                 |> Option.defaultValue directoryName
                TitleSlug = metadata.TryFind Keys.titleSlug
                Description = rawIndexDescription |> Option.defaultValue ""
-               IndexBlob = Blob.Text ifc
+               IndexBlob = Blob.Text rawText
                ImageVersion = imageVersion
                CreatedOn = None
                Tags = metadata.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
