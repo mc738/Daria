@@ -38,7 +38,6 @@ module Metadata =
         
         let publishedOn = $"{prefix}:published_on"
         
-        
         let overrideCss = $"{prefix}:override_css"
         
         let rawLink = $"{prefix}:raw_link"
