@@ -37,6 +37,11 @@ module Metadata =
         let createdOn = $"{prefix}:created_on"
         
         let publishedOn = $"{prefix}:published_on"
+        
+        
+        let overrideCss = $"{prefix}:override_css"
+        
+        let rawLink = $"{prefix}:raw_link"
 
     let tryToBool (value: string) =
         match value.ToLower() with
