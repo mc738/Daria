@@ -192,7 +192,6 @@ module Import =
             | AddResult.MissingRelatedEntity _ -> ()
             | AddResult.Failure(message, exceptionOption) -> ()
 
-
             let imageVersion =
                 imd.TryFind Keys.imageVersionId
                 |> Option.map (RelatedEntityVersion.Specified)
