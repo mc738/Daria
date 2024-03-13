@@ -203,8 +203,8 @@ module Import =
                            SeriesId = seriesId
                            ArticleOrder = amd.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
                            CreatedOn =
-                               amd.TryFind Keys.createdOn
-                               |> Option.bind (tryToDateTime settings.DateTimeFormats) }
+                             amd.TryFind Keys.createdOn
+                             |> Option.bind (tryToDateTime settings.DateTimeFormats) }
                         : Models.NewArticle)
                         |> Articles.add ctx
 
@@ -215,14 +215,16 @@ module Import =
                              amd.TryFind Keys.title
                              |> Option.orElse rawArticleTitle
                              |> Option.defaultValue fileName
-                           TitleSlug = imd.TryFind Keys.titleSlug
+                           TitleSlug = amd.TryFind Keys.titleSlug
                            Description = rawArticleDescription |> Option.defaultValue ""
                            ArticleBlob = Blob.Text afc
                            ImageVersion = articleImageVersion
-                           RawLink = failwith "todo"
-                           OverrideCss = failwith "todo"
-                           CreatedOn = failwith "todo"
-                           PublishedOn = failwith "todo"
+                           RawLink = amd.TryFind Keys.rawLink
+                           OverrideCss = amd.TryFind Keys.overrideCss
+                           CreatedOn = None
+                           PublishedOn =
+                             amd.TryFind Keys.publishedOn
+                             |> Option.bind (tryToDateTime settings.DateTimeFormats)
                            Tags = amd.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
                            Metadata = amd }
                         : Models.NewArticleVersion)
