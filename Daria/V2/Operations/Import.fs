@@ -277,7 +277,10 @@ module Import =
                 |> ImportDirectoryResult.Success
 
                 ()
-            | AddResult.MissingRelatedEntity _ -> ()
+            | AddResult.MissingRelatedEntity _ ->
+                
+                
+                ()
             | AddResult.Failure(message, exceptionOption) -> ()
 
             (*
