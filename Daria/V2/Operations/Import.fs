@@ -130,7 +130,7 @@ module Import =
         (lines: string list)
         =
         let rawIndexTitle, rawIndexDescription = tryGetTitleAndDescription lines
-        
+
         let imageVersion =
             metadata.TryFind Keys.imageVersionId
             |> Option.map (RelatedEntityVersion.Specified)
@@ -166,6 +166,33 @@ module Import =
         | true -> Series.addDraftVersion ctx false newVersion
         | false -> Series.addVersion ctx false newVersion
 
+    let addArticle
+        (ctx: SqliteContext)
+        (settings: Settings)
+        (metadata: Map<string, string>)
+        (seriesId: string)
+        (fileName: string)
+        =
+
+        let articleId =
+            metadata.TryFind Keys.articleId
+            |> Option.orElseWith (fun _ -> metadata.TryFind Keys.titleSlug)
+            |> Option.orElseWith (fun _ -> metadata.TryFind Keys.title |> Option.map slugify)
+            |> Option.defaultValue (slugify fileName)
+            
+        ({ Id = IdType.Specific articleId
+           Name =
+             metadata.TryFind Keys.articleName
+             |> Option.orElseWith (fun _ -> metadata.TryFind Keys.title)
+             |> Option.defaultValue fileName
+           SeriesId = seriesId
+           ArticleOrder =
+             metadata.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
+           CreatedOn =
+             metadata.TryFind Keys.createdOn
+             |> Option.bind (tryToDateTime settings.DateTimeFormats) }
+        : Models.NewArticle)
+        |> Articles.add ctx
 
     let rec scanDirectory (ctx: SqliteContext) (settings: Settings) (parentId: string option) (path: string) =
         // First look for an index file.
@@ -185,12 +212,12 @@ module Import =
             let rawIndexTitle, rawIndexDescription = tryGetTitleAndDescription indexLines
 
             let indexResult = addSeries ctx settings imd parentId dirName
-            
+
             match addSeries ctx settings imd parentId dirName with
             | AddResult.Success seriesId
             | AddResult.AlreadyExists seriesId
             | AddResult.NoChange seriesId ->
-                    
+
                 let fileResults =
                     Directory.EnumerateFiles(path)
                     |> Seq.filter (fun fi ->
@@ -231,7 +258,8 @@ module Import =
                                  |> Option.orElseWith (fun _ -> amd.TryFind Keys.title)
                                  |> Option.defaultValue dirName
                                SeriesId = seriesId
-                               ArticleOrder = amd.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
+                               ArticleOrder =
+                                 amd.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
                                CreatedOn =
                                  amd.TryFind Keys.createdOn
                                  |> Option.bind (tryToDateTime settings.DateTimeFormats) }
@@ -278,8 +306,8 @@ module Import =
 
                 ()
             | AddResult.MissingRelatedEntity _ ->
-                
-                
+
+
                 ()
             | AddResult.Failure(message, exceptionOption) -> ()
 
@@ -315,7 +343,7 @@ module Import =
                 match imd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
                 | true -> Series.addDraftVersion ctx false newVersion
                 | false -> Series.addVersion ctx false newVersion
-            *)    
+            *)
 
             let fileResults =
                 Directory.EnumerateFiles(path)
