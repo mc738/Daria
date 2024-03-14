@@ -119,7 +119,6 @@ module Import =
         : Models.NewSeries)
         |> Series.add ctx
 
-
     let addSeriesVersion
         (ctx: SqliteContext)
         (settings: Settings)
@@ -194,6 +193,54 @@ module Import =
         : Models.NewArticle)
         |> Articles.add ctx
 
+    let addArticleVersion
+        (ctx: SqliteContext)
+        (settings: Settings)
+        (metadata: Map<string, string>)
+        (seriesId: string)
+        (directoryName: string)
+        (rawText: string)
+        (lines: string list)
+        =
+        let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription articleLines
+
+        let articleImageVersion =
+            imd.TryFind Keys.imageVersionId
+            |> Option.map (RelatedEntityVersion.Specified)
+            |> Option.orElseWith (fun _ ->
+                imd.TryFind Keys.imageId
+                |> Option.map (fun iid ->
+                    match imd.TryFind Keys.imageVersion |> Option.bind tryToInt with
+                    | Some v -> EntityVersion.Specific(iid, v)
+                    | None -> EntityVersion.Latest iid
+                    |> RelatedEntityVersion.Lookup))
+
+        let newArticleVersion =
+            ({ Id = IdType.Generated
+               ArticleId = articleId
+               Title =
+                 amd.TryFind Keys.title
+                 |> Option.orElse rawArticleTitle
+                 |> Option.defaultValue fileName
+               TitleSlug = amd.TryFind Keys.titleSlug
+               Description = rawArticleDescription |> Option.defaultValue ""
+               ArticleBlob = Blob.Text afc
+               ImageVersion = articleImageVersion
+               RawLink = amd.TryFind Keys.rawLink
+               OverrideCss = amd.TryFind Keys.overrideCss
+               CreatedOn = None
+               PublishedOn =
+                 amd.TryFind Keys.publishedOn
+                 |> Option.bind (tryToDateTime settings.DateTimeFormats)
+               Tags = amd.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
+               Metadata = amd }
+            : Models.NewArticleVersion)
+
+        match amd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
+        | true -> Articles.addDraftVersion ctx false newArticleVersion
+        | false -> Articles.addVersion ctx false newArticleVersion
+        |> fun r -> { Path = fi; Result = r })
+    
     let rec scanDirectory (ctx: SqliteContext) (settings: Settings) (parentId: string option) (path: string) =
         // First look for an index file.
         let indexPath = Path.Combine(path, settings.IndexFileName)
@@ -225,20 +272,27 @@ module Import =
                         && settings.IgnorePatterns |> List.exists (fun ip -> ip.IsMatch fi) |> not)
                     |> List.ofSeq
                     |> List.map (fun fi ->
+                        
                         let afc = File.ReadAllText fi //|> List.ofArray
 
                         let (amd, articleLines) =
                             Parser.ExtractMetadata(afc.Split Environment.NewLine |> List.ofArray)
-
-                        let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription articleLines
-
+                        
                         let fileName = Path.GetFileNameWithoutExtension(fi)
+                        
+                        let articleResult = addArticle ctx settings amd seriesId fileName
 
-                        let articleId =
-                            amd.TryFind Keys.articleId
-                            |> Option.orElseWith (fun _ -> amd.TryFind Keys.titleSlug)
-                            |> Option.orElseWith (fun _ -> amd.TryFind Keys.title |> Option.map slugify)
-                            |> Option.defaultValue (slugify dirName)
+                        match articleResult with
+                        | AddResult.Success articleId
+                        | AddResult.NoChange articleId
+                        | AddResult.AlreadyExists articleId ->
+                            
+                            
+                            failwith "todo"
+                        | AddResult.MissingRelatedEntity(entityType, id) -> failwith "todo"
+                        | AddResult.Failure(message, ``exception``) -> failwith "todo"
+                        
+                        let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription articleLines
 
                         let articleImageVersion =
                             imd.TryFind Keys.imageVersionId
@@ -250,21 +304,6 @@ module Import =
                                     | Some v -> EntityVersion.Specific(iid, v)
                                     | None -> EntityVersion.Latest iid
                                     |> RelatedEntityVersion.Lookup))
-
-                        let articleResult =
-                            ({ Id = IdType.Specific articleId
-                               Name =
-                                 amd.TryFind Keys.articleName
-                                 |> Option.orElseWith (fun _ -> amd.TryFind Keys.title)
-                                 |> Option.defaultValue dirName
-                               SeriesId = seriesId
-                               ArticleOrder =
-                                 amd.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
-                               CreatedOn =
-                                 amd.TryFind Keys.createdOn
-                                 |> Option.bind (tryToDateTime settings.DateTimeFormats) }
-                            : Models.NewArticle)
-                            |> Articles.add ctx
 
                         let newArticleVersion =
                             ({ Id = IdType.Generated
