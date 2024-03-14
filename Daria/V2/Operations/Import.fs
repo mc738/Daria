@@ -127,7 +127,10 @@ module Import =
         (seriesId: string)
         (directoryName: string)
         (rawText: string)
+        (lines: string list)
         =
+        let rawIndexTitle, rawIndexDescription = tryGetTitleAndDescription lines
+        
         let imageVersion =
             metadata.TryFind Keys.imageVersionId
             |> Option.map (RelatedEntityVersion.Specified)
