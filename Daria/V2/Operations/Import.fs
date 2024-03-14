@@ -197,8 +197,8 @@ module Import =
         (ctx: SqliteContext)
         (settings: Settings)
         (metadata: Map<string, string>)
-        (seriesId: string)
-        (directoryName: string)
+        (articleId: string)
+        (fileName: string)
         (rawText: string)
         (lines: string list)
         =
