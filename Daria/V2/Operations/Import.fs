@@ -286,7 +286,7 @@ module Import =
                         | AddResult.Success articleId
                         | AddResult.NoChange articleId
                         | AddResult.AlreadyExists articleId ->
-                            
+                            addArticleVersion ctx settings amd articleId dirName afc articleLines
                             
                             failwith "todo"
                         | AddResult.MissingRelatedEntity(entityType, id) -> failwith "todo"
