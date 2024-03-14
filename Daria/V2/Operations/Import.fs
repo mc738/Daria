@@ -184,6 +184,8 @@ module Import =
 
             let rawIndexTitle, rawIndexDescription = tryGetTitleAndDescription indexLines
 
+            let indexResult = addSeries ctx settings imd parentId dirName
+            
             match addSeries ctx settings imd parentId dirName with
             | AddResult.Success seriesId
             | AddResult.AlreadyExists seriesId
