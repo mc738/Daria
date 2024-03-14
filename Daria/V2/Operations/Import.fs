@@ -188,11 +188,97 @@ module Import =
             | AddResult.Success seriesId
             | AddResult.AlreadyExists seriesId
             | AddResult.NoChange seriesId ->
+                    
+                let fileResults =
+                    Directory.EnumerateFiles(path)
+                    |> Seq.filter (fun fi ->
+                        fi.Equals(settings.IndexFileName) |> not
+                        && settings.IgnorePatterns |> List.exists (fun ip -> ip.IsMatch fi) |> not)
+                    |> List.ofSeq
+                    |> List.map (fun fi ->
+                        let afc = File.ReadAllText fi //|> List.ofArray
+
+                        let (amd, articleLines) =
+                            Parser.ExtractMetadata(afc.Split Environment.NewLine |> List.ofArray)
+
+                        let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription articleLines
+
+                        let fileName = Path.GetFileNameWithoutExtension(fi)
+
+                        let articleId =
+                            amd.TryFind Keys.articleId
+                            |> Option.orElseWith (fun _ -> amd.TryFind Keys.titleSlug)
+                            |> Option.orElseWith (fun _ -> amd.TryFind Keys.title |> Option.map slugify)
+                            |> Option.defaultValue (slugify dirName)
+
+                        let articleImageVersion =
+                            imd.TryFind Keys.imageVersionId
+                            |> Option.map (RelatedEntityVersion.Specified)
+                            |> Option.orElseWith (fun _ ->
+                                imd.TryFind Keys.imageId
+                                |> Option.map (fun iid ->
+                                    match imd.TryFind Keys.imageVersion |> Option.bind tryToInt with
+                                    | Some v -> EntityVersion.Specific(iid, v)
+                                    | None -> EntityVersion.Latest iid
+                                    |> RelatedEntityVersion.Lookup))
+
+                        let articleResult =
+                            ({ Id = IdType.Specific articleId
+                               Name =
+                                 amd.TryFind Keys.articleName
+                                 |> Option.orElseWith (fun _ -> amd.TryFind Keys.title)
+                                 |> Option.defaultValue dirName
+                               SeriesId = seriesId
+                               ArticleOrder = amd.TryFind Keys.order |> Option.bind tryToInt |> Option.defaultValue 99999
+                               CreatedOn =
+                                 amd.TryFind Keys.createdOn
+                                 |> Option.bind (tryToDateTime settings.DateTimeFormats) }
+                            : Models.NewArticle)
+                            |> Articles.add ctx
+
+                        let newArticleVersion =
+                            ({ Id = IdType.Generated
+                               ArticleId = articleId
+                               Title =
+                                 amd.TryFind Keys.title
+                                 |> Option.orElse rawArticleTitle
+                                 |> Option.defaultValue fileName
+                               TitleSlug = amd.TryFind Keys.titleSlug
+                               Description = rawArticleDescription |> Option.defaultValue ""
+                               ArticleBlob = Blob.Text afc
+                               ImageVersion = articleImageVersion
+                               RawLink = amd.TryFind Keys.rawLink
+                               OverrideCss = amd.TryFind Keys.overrideCss
+                               CreatedOn = None
+                               PublishedOn =
+                                 amd.TryFind Keys.publishedOn
+                                 |> Option.bind (tryToDateTime settings.DateTimeFormats)
+                               Tags = amd.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
+                               Metadata = amd }
+                            : Models.NewArticleVersion)
+
+                        match amd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
+                        | true -> Articles.addDraftVersion ctx false newArticleVersion
+                        | false -> Articles.addVersion ctx false newArticleVersion
+                        |> fun r -> { Path = fi; Result = r })
+
+                let directoryResults =
+                    Directory.EnumerateDirectories(path)
+                    |> List.ofSeq
+                    |> List.map (scanDirectory ctx settings (Some seriesId))
+
+
+                ({ IndexResult = indexResult
+                   Results = fileResults
+                   ChildrenResults = directoryResults }
+                : ImportDirectorySuccessResult)
+                |> ImportDirectoryResult.Success
 
                 ()
             | AddResult.MissingRelatedEntity _ -> ()
             | AddResult.Failure(message, exceptionOption) -> ()
 
+            (*
             let imageVersion =
                 imd.TryFind Keys.imageVersionId
                 |> Option.map (RelatedEntityVersion.Specified)
@@ -224,6 +310,7 @@ module Import =
                 match imd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
                 | true -> Series.addDraftVersion ctx false newVersion
                 | false -> Series.addVersion ctx false newVersion
+            *)    
 
             let fileResults =
                 Directory.EnumerateFiles(path)
