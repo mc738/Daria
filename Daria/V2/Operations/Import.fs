@@ -239,7 +239,7 @@ module Import =
         match amd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
         | true -> Articles.addDraftVersion ctx false newArticleVersion
         | false -> Articles.addVersion ctx false newArticleVersion
-        |> fun r -> { Path = fi; Result = r })
+        |> fun r -> { Path = fi; Result = r }
     
     let rec scanDirectory (ctx: SqliteContext) (settings: Settings) (parentId: string option) (path: string) =
         // First look for an index file.
