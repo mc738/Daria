@@ -275,7 +275,6 @@ module Import =
                 | AddResult.NoChange _
                 | AddResult.AlreadyExists _ ->
 
-
                     let fileResults =
                         Directory.EnumerateFiles(path)
                         |> Seq.filter (fun fi ->
