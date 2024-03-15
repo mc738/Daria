@@ -219,27 +219,27 @@ module Import =
             ({ Id = IdType.Generated
                ArticleId = articleId
                Title =
-                 amd.TryFind Keys.title
+                 metadata.TryFind Keys.title
                  |> Option.orElse rawArticleTitle
                  |> Option.defaultValue fileName
-               TitleSlug = amd.TryFind Keys.titleSlug
+               TitleSlug = metadata.TryFind Keys.titleSlug
                Description = rawArticleDescription |> Option.defaultValue ""
-               ArticleBlob = Blob.Text afc
+               ArticleBlob = Blob.Text rawText
                ImageVersion = articleImageVersion
-               RawLink = amd.TryFind Keys.rawLink
-               OverrideCss = amd.TryFind Keys.overrideCss
+               RawLink = metadata.TryFind Keys.rawLink
+               OverrideCss = metadata.TryFind Keys.overrideCss
                CreatedOn = None
                PublishedOn =
-                 amd.TryFind Keys.publishedOn
+                 metadata.TryFind Keys.publishedOn
                  |> Option.bind (tryToDateTime settings.DateTimeFormats)
-               Tags = amd.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
-               Metadata = amd }
+               Tags = metadata.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
+               Metadata = metadata }
             : Models.NewArticleVersion)
 
-        match amd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
+        match metadata.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
         | true -> Articles.addDraftVersion ctx false newArticleVersion
         | false -> Articles.addVersion ctx false newArticleVersion
-        |> fun r -> { Path = fi; Result = r }
+        |> fun r -> { Path = fileName; Result = r }
     
     let rec scanDirectory (ctx: SqliteContext) (settings: Settings) (parentId: string option) (path: string) =
         // First look for an index file.
