@@ -287,50 +287,9 @@ module Import =
                         | AddResult.Success articleId
                         | AddResult.NoChange articleId
                         | AddResult.AlreadyExists articleId ->
-                            addArticleVersion ctx settings amd articleId dirName afc articleLines
-                            
-                            failwith "todo"
+                            addArticleVersion ctx settings amd articleId fileName fi afc articleLines
                         | AddResult.MissingRelatedEntity(entityType, id) -> failwith "todo"
-                        | AddResult.Failure(message, ``exception``) -> failwith "todo"
-                        
-                        let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription articleLines
-
-                        let articleImageVersion =
-                            imd.TryFind Keys.imageVersionId
-                            |> Option.map (RelatedEntityVersion.Specified)
-                            |> Option.orElseWith (fun _ ->
-                                imd.TryFind Keys.imageId
-                                |> Option.map (fun iid ->
-                                    match imd.TryFind Keys.imageVersion |> Option.bind tryToInt with
-                                    | Some v -> EntityVersion.Specific(iid, v)
-                                    | None -> EntityVersion.Latest iid
-                                    |> RelatedEntityVersion.Lookup))
-
-                        let newArticleVersion =
-                            ({ Id = IdType.Generated
-                               ArticleId = articleId
-                               Title =
-                                 amd.TryFind Keys.title
-                                 |> Option.orElse rawArticleTitle
-                                 |> Option.defaultValue fileName
-                               TitleSlug = amd.TryFind Keys.titleSlug
-                               Description = rawArticleDescription |> Option.defaultValue ""
-                               ArticleBlob = Blob.Text afc
-                               ImageVersion = articleImageVersion
-                               RawLink = amd.TryFind Keys.rawLink
-                               OverrideCss = amd.TryFind Keys.overrideCss
-                               CreatedOn = None
-                               PublishedOn =
-                                 amd.TryFind Keys.publishedOn
-                                 |> Option.bind (tryToDateTime settings.DateTimeFormats)
-                               Tags = amd.TryFind Keys.tags |> Option.map splitValues |> Option.defaultValue []
-                               Metadata = amd }
-                            : Models.NewArticleVersion)
-
-                        match amd.TryFind Keys.draft |> Option.bind tryToBool |> Option.defaultValue false with
-                        | true -> Articles.addDraftVersion ctx false newArticleVersion
-                        | false -> Articles.addVersion ctx false newArticleVersion
-                        |> fun r -> { Path = fi; Result = r })
+                        | AddResult.Failure(message, ``exception``) -> failwith "todo")
 
                 let directoryResults =
                     Directory.EnumerateDirectories(path)
