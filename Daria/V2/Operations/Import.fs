@@ -202,15 +202,15 @@ module Import =
         (rawText: string)
         (lines: string list)
         =
-        let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription articleLines
+        let rawArticleTitle, rawArticleDescription = tryGetTitleAndDescription lines
 
         let articleImageVersion =
-            imd.TryFind Keys.imageVersionId
+            metadata.TryFind Keys.imageVersionId
             |> Option.map (RelatedEntityVersion.Specified)
             |> Option.orElseWith (fun _ ->
-                imd.TryFind Keys.imageId
+                metadata.TryFind Keys.imageId
                 |> Option.map (fun iid ->
-                    match imd.TryFind Keys.imageVersion |> Option.bind tryToInt with
+                    match metadata.TryFind Keys.imageVersion |> Option.bind tryToInt with
                     | Some v -> EntityVersion.Specific(iid, v)
                     | None -> EntityVersion.Latest iid
                     |> RelatedEntityVersion.Lookup))
