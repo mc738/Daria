@@ -258,8 +258,6 @@ module Import =
 
             let dirName = DirectoryInfo(path).Name
 
-            // Handle the metadata.
-
             let indexResult = addSeries ctx settings imd parentId dirName
 
             match indexResult with
