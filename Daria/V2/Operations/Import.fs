@@ -23,7 +23,9 @@ module Import =
     open Freql.Sqlite
 
     type Settings =
-        { DirectoryIgnorePatterns: Regex list
+        { ArticlesRoot: string
+          ResourcesRoot: string
+          DirectoryIgnorePatterns: Regex list
           FileIgnorePatterns: Regex list
           DateTimeFormats: string list
           IndexFileName: string }
@@ -278,8 +280,7 @@ module Import =
                         Directory.EnumerateFiles(path)
                         |> Seq.filter (fun fi ->
                             fi.Equals(settings.IndexFileName) |> not
-                            && Path.Ex
-                            && settings.IgnorePatterns |> List.exists (fun ip -> ip.IsMatch fi) |> not)
+                            && settings.FileIgnorePatterns |> List.exists (fun ip -> ip.IsMatch fi) |> not)
                         |> List.ofSeq
                         |> List.map (fun fi ->
 
@@ -302,6 +303,9 @@ module Import =
 
                     let directoryResults =
                         Directory.EnumerateDirectories(path)
+                        |> Seq.filter (fun di ->
+                            let dn = DirectoryInfo(di).Name
+                            settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
                         |> List.ofSeq
                         |> List.map (scanDirectory ctx settings (Some seriesId))
 
