@@ -20,4 +20,8 @@
       <ProjectReference Include="..\Daria\Daria.fsproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="FsToolbox" Version="0.6.0" />
+    </ItemGroup>
+
 </Project>
