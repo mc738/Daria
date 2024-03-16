@@ -378,6 +378,15 @@ module Import =
                 ImportDirectoryResult.Skipped(path, $"Failure while adding the series version. Message: {message}")
         | false -> ImportDirectoryResult.Skipped("", $"Missing `{settings.IndexFileName}` file.")
 
-    let run _ =
+    let run (settingsPath: string) =
+        Settings.Load settingsPath
+        |> Result.map (fun settings ->
+            use ctx =
+                match File.Exists settings.StorePath with
+                | true -> SqliteContext.Open settings.StorePath
+                | false ->
+                    use ctx = SqliteContext.Create settings.StorePath
+                    Initialization.run ctx
+                    ctx
 
-        ()
+            scanDirectory ctx settings None settings.ArticlesRoot)
