@@ -8,4 +8,6 @@ module Options =
 
     and ImportOptions =
         { [<ArgValue("-p", "--path")>]
-          SettingsPath: string }
+          SettingsPath: string
+          [<ArgValue("-v", "--verbose")>]
+          Verbose: bool }
