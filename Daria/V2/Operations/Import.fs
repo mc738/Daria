@@ -85,7 +85,8 @@ module Import =
         | Skipped of Path: string * Reason: string
 
     and ImportDirectorySuccessResult =
-        { IndexResult: AddResult
+        { Path: string
+          IndexResult: AddResult
           Results: ImportResult list
           ChildrenResults: ImportDirectoryResult list }
 
@@ -357,7 +358,8 @@ module Import =
                         |> List.ofSeq
                         |> List.map (scanDirectory ctx settings (Some seriesId))
 
-                    ({ IndexResult = indexResult
+                    ({ Path = path
+                       IndexResult = indexResult
                        Results = fileResults
                        ChildrenResults = directoryResults }
                     : ImportDirectorySuccessResult)
