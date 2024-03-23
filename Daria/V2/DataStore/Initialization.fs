@@ -74,7 +74,7 @@ module Initialization =
           Records.Article.CreateTableSql()
           Records.ArticleVersion.CreateTableSql()
           Records.ArticleVersionLink.CreateTableSql()
-          Records.ArtifactMetadataItem.CreateTableSql()
+          Records.ArticleVersionMetadataItem.CreateTableSql()
           Records.ArticleVersionTag.CreateTableSql() ]
         |> List.iter (ctx.ExecuteSqlNonQuery >> ignore)
 
