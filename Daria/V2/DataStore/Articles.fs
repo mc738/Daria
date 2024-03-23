@@ -216,18 +216,26 @@ module Articles =
     let addDraftVersion (ctx: SqliteContext)  (force: bool) (newVersion: NewArticleVersion) =
         let id = newVersion.Id.ToString()
 
-        let (ms, hash) =
+        // TODO might need to check this gets properly disposed.
+        use ms =
             match newVersion.ArticleBlob with
-            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+            | Blob.Prepared(memoryStream, hash) -> memoryStream
             | Blob.Stream stream ->
                 let ms = stream |> toMemoryStream
-                ms, ms.GetSHA256Hash()
+                ms
             | Blob.Text t ->
-                use ms = new MemoryStream(t.ToUtf8Bytes())
-                ms, ms.GetSHA256Hash()
+                // Uses let or else the memory stream gets disposed before being used later.
+                let ms = new MemoryStream(t.ToUtf8Bytes())
+                ms
             | Blob.Bytes b ->
-                use ms = new MemoryStream(b)
-                ms, ms.GetSHA256Hash()
+                // Uses let or else the memory stream gets disposed before being used later.
+                let ms = new MemoryStream(b)
+                ms
+                
+        let hash =
+            match newVersion.ArticleBlob with
+            | Blob.Prepared(_, hash) -> hash
+            | _ -> ms.GetSHA256Hash()
 
         (*
             let version, draftVersion, prevHash =
@@ -312,18 +320,26 @@ module Articles =
     let addVersion (ctx: SqliteContext) (force: bool) (newVersion: NewArticleVersion) =
         let id = newVersion.Id.ToString()
 
-        let ms, hash =
+        // TODO might need to check this gets properly disposed.
+        use ms =
             match newVersion.ArticleBlob with
-            | Blob.Prepared(memoryStream, hash) -> memoryStream, hash
+            | Blob.Prepared(memoryStream, _) -> memoryStream
             | Blob.Stream stream ->
                 let ms = stream |> toMemoryStream
-                ms, ms.GetSHA256Hash()
+                ms
             | Blob.Text t ->
-                use ms = new MemoryStream(t.ToUtf8Bytes())
-                ms, ms.GetSHA256Hash()
+                // Uses let or else the memory stream gets disposed before being used later.
+                let ms = new MemoryStream(t.ToUtf8Bytes())
+                ms
             | Blob.Bytes b ->
-                use ms = new MemoryStream(b)
-                ms, ms.GetSHA256Hash()
+                // Uses let or else the memory stream gets disposed before being used later.
+                let ms = new MemoryStream(b)
+                ms
+                
+        let hash =
+            match newVersion.ArticleBlob with
+            | Blob.Prepared(_, hash) -> hash
+            | _ -> ms.GetSHA256Hash()
 
         let version, prevHash =
             match
