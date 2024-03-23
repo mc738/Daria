@@ -46,6 +46,8 @@ module ImportAction =
                 
                 printfn $"Success: {success} Skipped: {skipped}"
             | false ->
+                failwith "Non-verbose mode not implemented yet."
+                (*
                 let rec count (success: int) (skipped: int) (r: Import.ImportDirectoryResult) =
                     match r with
                     | Import.Success importDirectorySuccessResult ->
@@ -61,6 +63,7 @@ module ImportAction =
 
 
                     ()
+                *)
 
 
 
