@@ -1,6 +1,7 @@
-﻿
+﻿open Daria.App.Actions
+open Daria.App.Common
+open Daria.App.Common.Options
 
-
-
-// For more information see https://aka.ms/fsharp-console-apps
-printfn "Hello from F#"
+match getOptions () with
+| Ok(AppOptions.Import io) -> ImportAction.run io
+| Error _ -> failwith "Failed to parse options."
