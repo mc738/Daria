@@ -77,8 +77,8 @@ module Common =
                 |> Option.defaultValue ""
 
             match d with
-            | DraftStatus.Draft -> Some $"{pf}draft IS NOT NULL"
-            | DraftStatus.NotDraft -> Some $"{pf}draft IS NULL"
+            | DraftStatus.Draft -> Some $"{pf}draft_version IS NOT NULL"
+            | DraftStatus.NotDraft -> Some $"{pf}draft_version IS NULL"
             | DraftStatus.All -> None
 
     [<RequireQualifiedAccess>]
