@@ -27,6 +27,7 @@
         <Compile Include="V2\DataStore\Impl.fs" />
         <Folder Include="V2\Pages\" />
         <Compile Include="V2\Operations\Import.fs" />
+        <Compile Include="V2\Operations\PageRenderer.fs" />
         
     </ItemGroup>
 
