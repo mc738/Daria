@@ -110,3 +110,31 @@ module Models =
           Metadata: Map<string, string> }
 
     type ResourceVersionOverview = { Id: string }
+
+    type ArticleLink =
+        { Title: string
+          Description: string
+          Url: string }
+
+
+    type RenderableArticle =
+        {
+            Id: string
+            VersionId: string
+            Version: int
+            Title: string
+            TitleSlug: string
+            Content: string
+            CreatedOn: DateTime
+            PublishedOn: DateTime option
+            
+            Tags: string list
+            Links: ArticleLink list
+        }
+        
+    and RenderableArticleImage =
+        {
+            Url: string
+            PreviewUrl: string
+        }
+        
