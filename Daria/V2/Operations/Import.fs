@@ -328,8 +328,9 @@ module Import =
                     let fileResults =
                         Directory.EnumerateFiles(path)
                         |> Seq.filter (fun fi ->
-                            fi.Equals(settings.IndexFileName) |> not
-                            && settings.FileIgnorePatterns |> List.exists (fun ip -> ip.IsMatch fi) |> not)
+                            let fn = Path.GetFileName(fi)
+                            fn.Equals(settings.IndexFileName) |> not
+                            && settings.FileIgnorePatterns |> List.exists (fun ip -> ip.IsMatch fn) |> not)
                         |> List.ofSeq
                         |> List.map (fun fi ->
 
@@ -391,4 +392,19 @@ module Import =
                     Initialization.run ctx
                     ctx
 
-            scanDirectory ctx settings None settings.ArticlesRoot)
+            let directoryResults =
+                Directory.EnumerateDirectories(settings.ArticlesRoot)
+                |> Seq.filter (fun di ->
+                    let dn = DirectoryInfo(di).Name
+                    settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
+                |> List.ofSeq
+                |> List.map (scanDirectory ctx settings None)
+                
+            ({ Path = settings.ArticlesRoot
+               IndexResult = AddResult.Success ""
+               Results = []
+               ChildrenResults = directoryResults }
+            : ImportDirectorySuccessResult)
+            |> ImportDirectoryResult.Success)
+
+            //scanDirectory ctx settings None settings.ArticlesRoot)
