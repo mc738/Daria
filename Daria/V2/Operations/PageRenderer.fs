@@ -1,9 +1,11 @@
 namespace Daria.V2.Operations
 
 open System
+open Daria.V2.DataStore.Models
 open FDOM.Rendering
 open Fluff.Core
 open Freql.Sqlite
+open SQLitePCL
 
 module PageRenderer =
 
@@ -53,7 +55,11 @@ module PageRenderer =
             | LinkedIn -> "Share on LinkedIn"
             | Email -> "Share via email"
 
-    let createShareLinks (articleUrl: string) (title: string) (description: string) =
+    let createIssueLink (title: string) =
+        title.Replace(" ", "+").Replace("#", "%23")
+        |> fun s -> $"https://github.com/mc738/Articles/issues/new?title=`{s}`+issue"
+
+    let createShareLinksData (articleUrl: string) (title: string) (description: string) =
         ShareLinkType.All()
         |> List.map (fun slt ->
             [ "icon", Mustache.Value.Scalar <| slt.GetIcon()
@@ -61,10 +67,22 @@ module PageRenderer =
               "link_title", Mustache.Value.Scalar <| slt.GetTitle() ]
             |> Map.ofList
             |> Mustache.Value.Object)
+        |> Mustache.Value.Array
+
+    let createLinkData (links: ArticleLink list) =
+        links
+        |> List.map (fun link ->
+            [ "link_title", Mustache.Value.Scalar link.Title
+              "link_description", Mustache.Value.Scalar link.Description
+              "link_url", Mustache.Value.Scalar link.Url ]
+            |> Map.ofList
+            |> Mustache.Value.Object)
+        |> Mustache.Value.Array
 
     let createTagsData (tags: string list) =
         tags
-        |> List.map (fun t -> [ "tag_name", Mustache.Value.Scalar t ] |> Map.ofList |> Mustache.Value.Object)
+        |> List.map (fun tag -> [ "tag_name", Mustache.Value.Scalar tag ] |> Map.ofList |> Mustache.Value.Object)
+        |> Mustache.Value.Array
 
     let createArticleData _ =
         [ "title", Mustache.Value.Scalar <| Html.renderTitle a.Title
@@ -86,8 +104,8 @@ module PageRenderer =
                   "parts", Mustache.Value.Array(a.Parts |> List.map (fun p -> p.CreateValues())) ]
                 |> Map.ofList
                 |> Mustache.Value.Object ]
-          "share_links", createShareLinks "" "" "" |> Mustache.Array
-          "tags", Mustache.Value.Array tags
+          "share_links", createShareLinksData "" "" ""
+          "tags", createTagsData []
           "url", Mustache.Value.Scalar a.Url
           "version", Mustache.Value.Scalar <| string a.Version
           "article_date", Mustache.Value.Scalar <| a.PublishDate.ToString("dd MMMM yyyy")
@@ -102,9 +120,9 @@ module PageRenderer =
           | Some np -> "next_part", np.CreateValues()
           | None -> ()
 
-          "links", Mustache.Value.Array(a.Links |> List.map (fun l -> l.CreateValue()))
+          "links", createLinkData []
 
-          "gh_issue_link", Mustache.Value.Scalar <| Utils.createIssueLink a.Content.TitleText
+          "gh_issue_link", Mustache.Value.Scalar <| createIssueLink a.Content.TitleText
           "thanks", Mustache.Value.Scalar a.Thanks
           "raw_link", Mustache.Value.Scalar a.RawLink
           match a.OverrideCssUrl with
