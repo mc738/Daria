@@ -1,5 +1,7 @@
 namespace Daria.V2.Operations
 
+open System
+open FDOM.Rendering
 open Fluff.Core
 open Freql.Sqlite
 
@@ -52,7 +54,7 @@ module PageRenderer =
             | Email -> "Share via email"
 
     let createShareLinks (articleUrl: string) (title: string) (description: string) =
-        ShareLinkType.All ()
+        ShareLinkType.All()
         |> List.map (fun slt ->
             [ "icon", Mustache.Value.Scalar <| slt.GetIcon()
               "link_url", Mustache.Value.Scalar <| slt.GenerateUrl(articleUrl, title, description)
@@ -60,6 +62,21 @@ module PageRenderer =
             |> Map.ofList
             |> Mustache.Value.Object)
 
+    let createTagsData (tags: string list) =
+        tags
+        |> List.map (fun t -> [ "tag_name", Mustache.Value.Scalar t ] |> Map.ofList |> Mustache.Value.Object)
+
+    let createArticleData _ =
+        [ "title", Mustache.Value.Scalar <| Html.renderTitle a.Title
+          "title_text", Mustache.Value.Scalar a.TitleText
+          "description", Mustache.Value.Scalar <| Html.renderDescription a.Description
+          "description_text", Mustache.Value.Scalar a.DescriptionText ]
+
+    let createPartsData title url =
+        [ "part_title", Mustache.Value.Scalar title
+          "part_url", Mustache.Value.Scalar url ]
+        |> Map.ofList
+        |> Mustache.Value.Object
 
     let createPageData _ =
         [ yield! a.Content.CreateValues()
