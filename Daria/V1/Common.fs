@@ -198,7 +198,6 @@ module Common =
             |> Map.ofList
             |> Mustache.Value.Object
 
-
     and ShareLink =
         { Icon: string
           Url: string
