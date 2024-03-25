@@ -130,6 +130,7 @@ module Models =
             
             RawLink: string option
             OverrideCssName: string option
+            Image: RenderableArticleImage option
             
             Tags: string list
             NextPart: RenderableArticlePart option
@@ -140,8 +141,9 @@ module Models =
         
     and RenderableArticleImage =
         {
-            Url: string
-            PreviewUrl: string
+            Name: string
+            PreviewName: string
+            Thanks: string
         }
         
     and RenderableArticlePart =
