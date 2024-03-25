@@ -2,6 +2,8 @@ namespace Daria.V2.Operations
 
 open System
 open System.IO
+open System.Text
+open System.Text.Encodings.Web
 open Daria.V2.DataStore.Models
 open FDOM.Core.Common
 open FDOM.Core.Parsing
@@ -97,6 +99,7 @@ module PageRenderer =
         (depth: int)
         (title: DOM.HeaderBlock)
         (description: DOM.ParagraphBlock)
+        (url: string)
         (article: RenderableArticle)
         =
         let urlDepth =
@@ -109,10 +112,11 @@ module PageRenderer =
 
         let parsedTitle = FDOM.Core.Parsing.BlockParser.tryParseHeaderBlock
 
+        let articleUrl = $"{url}/{UrlEncoder.Default.Encode article.TitleSlug}.html"
 
-        [ "title", Mustache.Value.Scalar <| Html.renderTitle title
+        [ "title_html", Mustache.Value.Scalar <| Html.renderTitle title
           "title_text", Mustache.Value.Scalar <| title.GetRawText()
-          "description", Mustache.Value.Scalar <| Html.renderDescription description
+          "description_html", Mustache.Value.Scalar <| Html.renderDescription description
           "description_text", Mustache.Value.Scalar <| description.GetRawText()
           "sections",
           Mustache.Value.Array
@@ -120,9 +124,9 @@ module PageRenderer =
                   "parts", article.AllParts |> List.map createPartData |> Mustache.Value.Array ]
                 |> Map.ofList
                 |> Mustache.Value.Object ]
-          "share_links", createShareLinksData "" "" ""
+          "share_links", createShareLinksData articleUrl article.Title article.Description
           "tags", createTagsData []
-          "url", Mustache.Value.Scalar a.Url
+          "url", Mustache.Value.Scalar articleUrl
           "version", Mustache.Value.Scalar <| string article.Version
           "article_date",
           article.PublishedOn
@@ -162,7 +166,13 @@ module PageRenderer =
               "override_css", [ "css_url", Mustache.Value.Scalar url ] |> Map.ofList |> Mustache.Object
           | None -> () ]
 
-    let renderPage (template: Mustache.Token list) (depth: int) (saveDirectory: string) (article: RenderableArticle) =
+    let renderPage
+        (template: Mustache.Token list)
+        (depth: int)
+        (url: string)
+        (saveDirectory: string)
+        (article: RenderableArticle)
+        =
 
         let blocks =
             Parser
@@ -196,7 +206,7 @@ module PageRenderer =
               Resources = [] }
 
         let pageData =
-            ({ Values = createPageData depth title description article |> Map.ofList
+            ({ Values = createPageData depth title description url article |> Map.ofList
                Partials = Map.empty }
             : Mustache.Data)
 
@@ -209,6 +219,7 @@ module PageRenderer =
         use ctx = SqliteContext.Open ""
 
 
+        
 
 
 
