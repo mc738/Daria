@@ -90,25 +90,38 @@ module PageRenderer =
           "description", Mustache.Value.Scalar <| Html.renderDescription a.Description
           "description_text", Mustache.Value.Scalar a.DescriptionText ]
 
-    let createPartsData title url =
-        [ "part_title", Mustache.Value.Scalar title
-          "part_url", Mustache.Value.Scalar url ]
+    let createPartsData (part: RenderableArticlePart) =
+        [ "part_title", Mustache.Value.Scalar part.Title
+          "part_url", Mustache.Value.Scalar $"./{part.TitleSlug}.html" ]
         |> Map.ofList
         |> Mustache.Value.Object
 
-    let createPageData _ =
+    let createPageData (depth: int) (article: RenderableArticle) =
+        let urlDepth =
+            match depth >= 1 with
+            | true ->
+                [ for i in 0 .. (depth - 1) do
+                      ".." ]
+                |> String.concat "/"
+            | _ -> "."
+
+
         [ yield! a.Content.CreateValues()
           "sections",
           Mustache.Value.Array
               [ [ "collection_title", Mustache.Value.Scalar "Parts"
-                  "parts", Mustache.Value.Array(a.Parts |> List.map (fun p -> p.CreateValues())) ]
+                  "parts", Mustache.Value.Array(a.Parts |> List.map (fun p -> createPartsData p.CreateValues())) ]
                 |> Map.ofList
                 |> Mustache.Value.Object ]
           "share_links", createShareLinksData "" "" ""
           "tags", createTagsData []
           "url", Mustache.Value.Scalar a.Url
-          "version", Mustache.Value.Scalar <| string a.Version
-          "article_date", Mustache.Value.Scalar <| a.PublishDate.ToString("dd MMMM yyyy")
+          "version", Mustache.Value.Scalar <| string article.Version
+          "article_date",
+          article.PublishedOn
+          |> Option.defaultValue (article.CreatedOn)
+          |> fun dt -> dt.ToString("dd MMMM yyyy")
+          |> Mustache.Value.Scalar
           "image", Mustache.Value.Scalar a.Image
           "preview_image", Mustache.Value.Scalar a.ImagePreview
           "now", Mustache.Value.Scalar(DateTime.Now.ToString("dd MMMM yyyy 'at' HH:mm:ss"))
@@ -122,11 +135,19 @@ module PageRenderer =
 
           "links", createLinkData []
 
-          "gh_issue_link", Mustache.Value.Scalar <| createIssueLink a.Content.TitleText
+          "gh_issue_link", Mustache.Value.Scalar <| createIssueLink article.Title
           "thanks", Mustache.Value.Scalar a.Thanks
-          "raw_link", Mustache.Value.Scalar a.RawLink
-          match a.OverrideCssUrl with
-          | Some url -> "override_css", [ "css_url", Mustache.Value.Scalar url ] |> Map.ofList |> Mustache.Object
+          match article.RawLink with
+          | Some rawLink -> "raw_link", Mustache.Value.Scalar rawLink
+          | None -> ()
+          match article.OverrideCssName with
+          | Some name ->
+              let url =
+                  match name.EndsWith(".css") with
+                  | true -> $"{urlDepth}/{name}"
+                  | false -> $"{urlDepth}/{name}.css"
+
+              "override_css", [ "css_url", Mustache.Value.Scalar url ] |> Map.ofList |> Mustache.Object
           | None -> () ]
 
     let renderPage () = ()
