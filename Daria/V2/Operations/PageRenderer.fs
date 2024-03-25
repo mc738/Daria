@@ -1,7 +1,10 @@
 namespace Daria.V2.Operations
 
 open System
+open System.IO
 open Daria.V2.DataStore.Models
+open FDOM.Core.Common
+open FDOM.Core.Parsing
 open FDOM.Rendering
 open Fluff.Core
 open Freql.Sqlite
@@ -84,19 +87,18 @@ module PageRenderer =
         |> List.map (fun tag -> [ "tag_name", Mustache.Value.Scalar tag ] |> Map.ofList |> Mustache.Value.Object)
         |> Mustache.Value.Array
 
-    let createArticleData _ =
-        [ "title", Mustache.Value.Scalar <| Html.renderTitle a.Title
-          "title_text", Mustache.Value.Scalar a.TitleText
-          "description", Mustache.Value.Scalar <| Html.renderDescription a.Description
-          "description_text", Mustache.Value.Scalar a.DescriptionText ]
-
     let createPartData (part: RenderableArticlePart) =
         [ "part_title", Mustache.Value.Scalar part.Title
           "part_url", Mustache.Value.Scalar $"./{part.TitleSlug}.html" ]
         |> Map.ofList
         |> Mustache.Value.Object
 
-    let createPageData (depth: int) (article: RenderableArticle) =
+    let createPageData
+        (depth: int)
+        (title: DOM.HeaderBlock)
+        (description: DOM.ParagraphBlock)
+        (article: RenderableArticle)
+        =
         let urlDepth =
             match depth >= 1 with
             | true ->
@@ -105,8 +107,13 @@ module PageRenderer =
                 |> String.concat "/"
             | _ -> "."
 
+        let parsedTitle = FDOM.Core.Parsing.BlockParser.tryParseHeaderBlock
 
-        [ yield! a.Content.CreateValues()
+
+        [ "title", Mustache.Value.Scalar <| Html.renderTitle title
+          "title_text", Mustache.Value.Scalar <| title.GetRawText()
+          "description", Mustache.Value.Scalar <| Html.renderDescription description
+          "description_text", Mustache.Value.Scalar <| description.GetRawText()
           "sections",
           Mustache.Value.Array
               [ [ "collection_title", Mustache.Value.Scalar "Parts"
@@ -122,17 +129,17 @@ module PageRenderer =
           |> Option.defaultValue (article.CreatedOn)
           |> fun dt -> dt.ToString("dd MMMM yyyy")
           |> Mustache.Value.Scalar
-          
+
           "now", Mustache.Value.Scalar(DateTime.Now.ToString("dd MMMM yyyy 'at' HH:mm:ss"))
           match article.PreviousPart with
           | Some pp -> "previous_part", createPartData pp
           | None -> ()
-          
+
           match article.NextPart with
           | Some np -> "next_part", createPartData np
           | None -> ()
 
-          "links", createLinkData []
+          "links", createLinkData article.Links
 
           "gh_issue_link", Mustache.Value.Scalar <| createIssueLink article.Title
           match article.Image with
@@ -141,7 +148,7 @@ module PageRenderer =
               "preview_image", Mustache.Value.Scalar $"{urlDepth}/img/{rai.PreviewName}"
               "thanks", Mustache.Value.Scalar rai.Thanks
           | None -> ()
-          
+
           match article.RawLink with
           | Some rawLink -> "raw_link", Mustache.Value.Scalar rawLink
           | None -> ()
@@ -155,7 +162,47 @@ module PageRenderer =
               "override_css", [ "css_url", Mustache.Value.Scalar url ] |> Map.ofList |> Mustache.Object
           | None -> () ]
 
-    let renderPage () = ()
+    let renderPage (template: Mustache.Token list) (depth: int) (saveDirectory: string) (article: RenderableArticle) =
+
+        let blocks =
+            Parser
+                .ParseLines(article.Content.Split Environment.NewLine |> List.ofArray)
+                .CreateBlockContent()
+
+        let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
+
+        let title =
+            match titleBlock with
+            | DOM.BlockContent.Header h -> Some h
+            | _ -> None
+            |> Option.defaultWith (fun _ -> failwith "Missing title.")
+
+        let description =
+            match descriptionBlock with
+            | DOM.BlockContent.Paragraph p -> p
+            | _ ->
+                { Style = DOM.Style.Default
+                  Content = [ DOM.InlineContent.Text { Content = "" } ] }
+
+        let doc: FDOM.Core.Common.DOM.Document =
+            { Style = FDOM.Core.Common.DOM.Style.Default
+              Name = ""
+              Title = Some title
+              Sections =
+                [ { Style = FDOM.Core.Common.DOM.Style.Default
+                    Title = None
+                    Name = "Section 1"
+                    Content = content } ]
+              Resources = [] }
+
+        let pageData =
+            ({ Values = createPageData depth title description article |> Map.ofList
+               Partials = Map.empty }
+            : Mustache.Data)
+
+        Html.renderFromParsedTemplate template pageData [] [] doc
+        |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
+
 
 
     let run _ =
