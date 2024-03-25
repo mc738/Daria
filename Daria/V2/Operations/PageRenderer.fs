@@ -90,7 +90,7 @@ module PageRenderer =
           "description", Mustache.Value.Scalar <| Html.renderDescription a.Description
           "description_text", Mustache.Value.Scalar a.DescriptionText ]
 
-    let createPartsData (part: RenderableArticlePart) =
+    let createPartData (part: RenderableArticlePart) =
         [ "part_title", Mustache.Value.Scalar part.Title
           "part_url", Mustache.Value.Scalar $"./{part.TitleSlug}.html" ]
         |> Map.ofList
@@ -110,7 +110,7 @@ module PageRenderer =
           "sections",
           Mustache.Value.Array
               [ [ "collection_title", Mustache.Value.Scalar "Parts"
-                  "parts", Mustache.Value.Array(a.Parts |> List.map (fun p -> createPartsData p.CreateValues())) ]
+                  "parts", article.AllParts |> List.map createPartData |> Mustache.Value.Array ]
                 |> Map.ofList
                 |> Mustache.Value.Object ]
           "share_links", createShareLinksData "" "" ""
@@ -122,21 +122,26 @@ module PageRenderer =
           |> Option.defaultValue (article.CreatedOn)
           |> fun dt -> dt.ToString("dd MMMM yyyy")
           |> Mustache.Value.Scalar
-          "image", Mustache.Value.Scalar a.Image
-          "preview_image", Mustache.Value.Scalar a.ImagePreview
+          
           "now", Mustache.Value.Scalar(DateTime.Now.ToString("dd MMMM yyyy 'at' HH:mm:ss"))
-          match a.PreviousPart with
-          | Some pp -> "previous_part", pp.CreateValues()
+          match article.PreviousPart with
+          | Some pp -> "previous_part", createPartData pp
           | None -> ()
-
-          match a.NextPart with
-          | Some np -> "next_part", np.CreateValues()
+          
+          match article.NextPart with
+          | Some np -> "next_part", createPartData np
           | None -> ()
 
           "links", createLinkData []
 
           "gh_issue_link", Mustache.Value.Scalar <| createIssueLink article.Title
-          "thanks", Mustache.Value.Scalar a.Thanks
+          match article.Image with
+          | Some rai ->
+              "image", Mustache.Value.Scalar $"{urlDepth}/img/{rai.Name}"
+              "preview_image", Mustache.Value.Scalar $"{urlDepth}/img/{rai.PreviewName}"
+              "thanks", Mustache.Value.Scalar rai.Thanks
+          | None -> ()
+          
           match article.RawLink with
           | Some rawLink -> "raw_link", Mustache.Value.Scalar rawLink
           | None -> ()
