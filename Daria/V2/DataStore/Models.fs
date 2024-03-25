@@ -124,6 +124,7 @@ module Models =
             Version: int
             Title: string
             TitleSlug: string
+            Description: string
             Content: string
             CreatedOn: DateTime
             PublishedOn: DateTime option
