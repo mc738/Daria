@@ -128,7 +128,13 @@ module Models =
             CreatedOn: DateTime
             PublishedOn: DateTime option
             
+            RawLink: string option
+            OverrideCssName: string option
+            
             Tags: string list
+            NextPart: RenderableArticlePart option
+            PreviousPart: RenderableArticlePart option
+            AllParts: RenderableArticlePart list
             Links: ArticleLink list
         }
         
@@ -138,3 +144,8 @@ module Models =
             PreviewUrl: string
         }
         
+    and RenderableArticlePart =
+        {
+            Title: string
+            TitleSlug: string
+        }
