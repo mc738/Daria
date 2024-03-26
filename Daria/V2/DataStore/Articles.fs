@@ -400,4 +400,13 @@ module Articles =
         Operations.selectArticleVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
         |> Option.map (fun ar -> ar.ArticleBlob.ToBytes() |> Encoding.UTF8.GetString)
 
-    //let getRenderableArticles
+    let getRenderableArticles (ctx: SqliteContext) (seriesId: string) =
+        Operations.selectArticleRecord ctx [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order " ] [ seriesId ]
+        |> List.choose (fun )
+        
+        
+        
+        ()
+        
+        
+        
