@@ -103,7 +103,7 @@ module Articles =
                 |> toSql
 
             ctx.SelectSingleAnon<ArticleVersionListingItem>(sql, [ articleId ])
-            
+
         let fetchLatestVersionOverview
             (ctx: SqliteContext)
             (articleId: string)
@@ -112,7 +112,7 @@ module Articles =
             =
 
             let sql =
-                [ ArticleVersionListingItem.SelectSql()
+                [ "SELECT id, article_id, version, draft_version, title, title_slug, description, hash, created_on, published_on, active FROM article_versions"
                   "WHERE article_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -124,7 +124,7 @@ module Articles =
                   "LIMIT 1" ]
                 |> toSql
 
-            ctx.SelectSingleAnon<ArticleOverview>(sql, [ articleId ])
+            ctx.SelectSingleAnon<ArticleVersionOverview>(sql, [ articleId ])
 
         let fetchVersionListingById (ctx: SqliteContext) (versionId: string) =
             let sql = [ ArticleVersionListingItem.SelectSql(); "WHERE id = @0" ] |> toSql
@@ -237,7 +237,7 @@ module Articles =
     /// <param name="ctx"></param>
     /// <param name="newVersion"></param>
     /// <param name="force">Skip the diff check and add the new draft version. This can be useful if the check is handled externally.</param>
-    let addDraftVersion (ctx: SqliteContext)  (force: bool) (newVersion: NewArticleVersion) =
+    let addDraftVersion (ctx: SqliteContext) (force: bool) (newVersion: NewArticleVersion) =
         let id = newVersion.Id.ToString()
 
         // TODO might need to check this gets properly disposed.
@@ -255,7 +255,7 @@ module Articles =
                 // Uses let or else the memory stream gets disposed before being used later.
                 let ms = new MemoryStream(b)
                 ms
-                
+
         let hash =
             match newVersion.ArticleBlob with
             | Blob.Prepared(_, hash) -> hash
@@ -319,9 +319,9 @@ module Articles =
                Hash = hash
                ImageVersionId = ivi
                RawLink = newVersion.RawLink
-               OverrideCssName = newVersion.OverrideCss 
+               OverrideCssName = newVersion.OverrideCss
                CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
-               PublishedOn = newVersion.PublishedOn 
+               PublishedOn = newVersion.PublishedOn
                Active = true }
             : Parameters.NewArticleVersion)
             |> Operations.insertArticleVersion ctx
@@ -359,7 +359,7 @@ module Articles =
                 // Uses let or else the memory stream gets disposed before being used later.
                 let ms = new MemoryStream(b)
                 ms
-                
+
         let hash =
             match newVersion.ArticleBlob with
             | Blob.Prepared(_, hash) -> hash
@@ -405,9 +405,9 @@ module Articles =
                Hash = hash
                ImageVersionId = ivi
                RawLink = newVersion.RawLink
-               OverrideCssName = newVersion.OverrideCss 
+               OverrideCssName = newVersion.OverrideCss
                CreatedOn = newVersion.CreatedOn |> Option.defaultValue DateTime.UtcNow
-               PublishedOn = newVersion.PublishedOn 
+               PublishedOn = newVersion.PublishedOn
                Active = true }
             : Parameters.NewArticleVersion)
             |> Operations.insertArticleVersion ctx
@@ -424,17 +424,29 @@ module Articles =
         |> Option.map (fun ar -> ar.ArticleBlob.ToBytes() |> Encoding.UTF8.GetString)
 
     let getRenderableArticles (ctx: SqliteContext) (seriesId: string) (inc) =
-        Operations.selectArticleRecords ctx [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order " ] [ seriesId ]
+        Operations.selectArticleRecords
+            ctx
+            [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order " ]
+            [ seriesId ]
         |> List.choose (fun ar ->
-            Internal.fetchLatestVersionListing
-            Internal.fetchArticleVersionOverviews ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft)
-            //Internal.fetchArticleVersionListings
-            
-            //Operations.selectArticleVersionRecord ctx [ "WHERE arti" ])
-        
-        
-        
-        ()
-        
-        
-        
+            Internal.fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
+            |> Option.map (fun av -> ar, av))
+        |> List.map (fun (ar, av) ->
+            ({ Id = ar.Id
+               VersionId = av.Id
+               Version = av.Version
+               Title = av.Title
+               TitleSlug = av.TitleSlug
+               Description = av.Description
+               CreatedOn = av.CreatedOn
+               PublishedOn = av.PublishedOn
+               RawLink = None
+               OverrideCssName = None
+               Image = failwith "todo"
+               Tags =
+                   Operations.selectArticleVersionTagRecords ctx [ "WHERE article_version_id = @0" ] [ av.Id ]
+                   |> List.map (fun t -> t.Tag)
+               NextPart = failwith "todo"
+               PreviousPart = failwith "todo"
+               AllParts = failwith "todo"
+               Links = failwith "todo" }: RenderableArticle))
