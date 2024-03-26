@@ -217,7 +217,7 @@ module PageRenderer =
         Html.renderFromParsedTemplate template pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
-    let run _ =
+    let run storePath =
         use ctx = SqliteContext.Open ""
 
 
