@@ -5,6 +5,7 @@
 
 open System.Text
 open Daria.V2.DataStore.Common
+open Daria.V2.DataStore.Models
 
 [<RequireQualifiedAccess>]
 module Articles =
@@ -43,7 +44,7 @@ module Articles =
         /// <param name="articleId"></param>
         /// <param name="activeStatus"></param>
         /// <param name="draftStatus"></param>
-        let fetchArticleVersions
+        let fetchArticleVersionOverviews
             (ctx: SqliteContext)
             (articleId: string)
             (activeStatus: ActiveStatus)
@@ -102,6 +103,28 @@ module Articles =
                 |> toSql
 
             ctx.SelectSingleAnon<ArticleVersionListingItem>(sql, [ articleId ])
+            
+        let fetchLatestVersionOverview
+            (ctx: SqliteContext)
+            (articleId: string)
+            (activeStatus: ActiveStatus)
+            (draftStatus: DraftStatus)
+            =
+
+            let sql =
+                [ ArticleVersionListingItem.SelectSql()
+                  "WHERE article_id = @0"
+                  match activeStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> ()
+                  match draftStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> ()
+                  "ORDER BY version DESC, draft_version DESC"
+                  "LIMIT 1" ]
+                |> toSql
+
+            ctx.SelectSingleAnon<ArticleOverview>(sql, [ articleId ])
 
         let fetchVersionListingById (ctx: SqliteContext) (versionId: string) =
             let sql = [ ArticleVersionListingItem.SelectSql(); "WHERE id = @0" ] |> toSql
@@ -129,7 +152,7 @@ module Articles =
 
     let rec fetchArticleVersionOverviews (ctx: SqliteContext) (articleId: string) =
         // TODO finish
-        Internal.fetchArticleVersions
+        Internal.fetchArticleVersionOverviews
 
     let exists (ctx: SqliteContext) (articleId: string) =
         Operations.selectArticleRecord ctx [ "WHERE id = @0;" ] [ articleId ]
@@ -160,7 +183,7 @@ module Articles =
                Order = a.ArticleOrder
                CreatedOn = a.CreatedOn
                Active = a.Active
-               Versions = Internal.fetchArticleVersions ctx a.Id ActiveStatus.All DraftStatus.All }
+               Versions = Internal.fetchArticleVersionOverviews ctx a.Id ActiveStatus.All DraftStatus.All }
             : ArticleListingItem))
 
     let fetchLatestVersion (ctx: SqliteContext) (articleId: string) (includeDrafts: bool) =
@@ -400,9 +423,14 @@ module Articles =
         Operations.selectArticleVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
         |> Option.map (fun ar -> ar.ArticleBlob.ToBytes() |> Encoding.UTF8.GetString)
 
-    let getRenderableArticles (ctx: SqliteContext) (seriesId: string) =
-        Operations.selectArticleRecord ctx [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order " ] [ seriesId ]
-        |> List.choose (fun )
+    let getRenderableArticles (ctx: SqliteContext) (seriesId: string) (inc) =
+        Operations.selectArticleRecords ctx [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order " ] [ seriesId ]
+        |> List.choose (fun ar ->
+            Internal.fetchLatestVersionListing
+            Internal.fetchArticleVersionOverviews ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft)
+            //Internal.fetchArticleVersionListings
+            
+            //Operations.selectArticleVersionRecord ctx [ "WHERE arti" ])
         
         
         
