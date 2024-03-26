@@ -4,6 +4,7 @@ open System
 open System.IO
 open System.Text
 open System.Text.Encodings.Web
+open Daria.V2.DataStore
 open Daria.V2.DataStore.Models
 open FDOM.Core.Common
 open FDOM.Core.Parsing
@@ -167,16 +168,19 @@ module PageRenderer =
           | None -> () ]
 
     let renderPage
+        (ctx: SqliteContext)
         (template: Mustache.Token list)
         (depth: int)
         (url: string)
         (saveDirectory: string)
         (article: RenderableArticle)
+        (articleContent: string)
         =
 
+        
         let blocks =
             Parser
-                .ParseLines(article.Content.Split Environment.NewLine |> List.ofArray)
+                .ParseLines(articleContent.Split Environment.NewLine |> List.ofArray)
                 .CreateBlockContent()
 
         let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
@@ -212,8 +216,6 @@ module PageRenderer =
 
         Html.renderFromParsedTemplate template pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
-
-
 
     let run _ =
         use ctx = SqliteContext.Open ""
