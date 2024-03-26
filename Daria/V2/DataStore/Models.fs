@@ -118,37 +118,26 @@ module Models =
 
 
     type RenderableArticle =
-        {
-            Id: string
-            VersionId: string
-            Version: int
-            Title: string
-            TitleSlug: string
-            Description: string
-            Content: string
-            CreatedOn: DateTime
-            PublishedOn: DateTime option
-            
-            RawLink: string option
-            OverrideCssName: string option
-            Image: RenderableArticleImage option
-            
-            Tags: string list
-            NextPart: RenderableArticlePart option
-            PreviousPart: RenderableArticlePart option
-            AllParts: RenderableArticlePart list
-            Links: ArticleLink list
-        }
-        
+        { Id: string
+          VersionId: string
+          Version: int
+          Title: string
+          TitleSlug: string
+          Description: string
+          CreatedOn: DateTime
+          PublishedOn: DateTime option
+          RawLink: string option
+          OverrideCssName: string option
+          Image: RenderableArticleImage option
+          Tags: string list
+          NextPart: RenderableArticlePart option
+          PreviousPart: RenderableArticlePart option
+          AllParts: RenderableArticlePart list
+          Links: ArticleLink list }
+
     and RenderableArticleImage =
-        {
-            Name: string
-            PreviewName: string
-            Thanks: string
-        }
-        
-    and RenderableArticlePart =
-        {
-            Title: string
-            TitleSlug: string
-        }
+        { Name: string
+          PreviewName: string
+          Thanks: string }
+
+    and RenderableArticlePart = { Title: string; TitleSlug: string }
