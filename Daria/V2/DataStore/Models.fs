@@ -84,7 +84,7 @@ module Models =
           Description: string
           Hash: string
           CreatedOn: DateTime
-          PublishedOn: DateTime
+          PublishedOn: DateTime option
           Active: bool }
 
     type NewArticle =
