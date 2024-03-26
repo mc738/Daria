@@ -429,7 +429,7 @@ module Articles =
             [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order " ]
             [ seriesId ]
         |> List.choose (fun ar ->
-            Internal.fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
+            fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
             |> Option.map (fun av -> ar, av))
         |> List.map (fun (ar, av) ->
             ({ Id = ar.Id
