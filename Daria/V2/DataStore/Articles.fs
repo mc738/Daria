@@ -423,15 +423,20 @@ module Articles =
         Operations.selectArticleVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
         |> Option.map (fun ar -> ar.ArticleBlob.ToBytes() |> Encoding.UTF8.GetString)
 
-    let getRenderableArticles (ctx: SqliteContext) (seriesId: string) (inc) =
-        Operations.selectArticleRecords
-            ctx
-            [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order " ]
-            [ seriesId ]
-        |> List.choose (fun ar ->
-            fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
-            |> Option.map (fun av -> ar, av))
-        |> List.map (fun (ar, av) ->
+    let getRenderableArticles (ctx: SqliteContext) (seriesId: string) =
+        // First get the articles and latest version as an array
+        let articlesArr =
+            Operations.selectArticleRecords
+                ctx
+                [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order" ]
+                [ seriesId ]
+            |> List.choose (fun ar ->
+                fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
+                |> Option.map (fun av -> ar, av))
+            |> Array.ofList
+        
+        articlesArr
+        |> Array.mapi (fun i (ar, av) ->
             ({ Id = ar.Id
                VersionId = av.Id
                Version = av.Version
@@ -450,3 +455,4 @@ module Articles =
                PreviousPart = failwith "todo"
                AllParts = failwith "todo"
                Links = failwith "todo" }: RenderableArticle))
+        |> List.ofArray
