@@ -434,7 +434,7 @@ module Articles =
                 fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
                 |> Option.map (fun av -> ar, av))
             |> Array.ofList
-        
+
         articlesArr
         |> Array.mapi (fun i (ar, av) ->
             ({ Id = ar.Id
@@ -449,10 +449,23 @@ module Articles =
                OverrideCssName = None
                Image = failwith "todo"
                Tags =
-                   Operations.selectArticleVersionTagRecords ctx [ "WHERE article_version_id = @0" ] [ av.Id ]
-                   |> List.map (fun t -> t.Tag)
-               NextPart = failwith "todo"
-               PreviousPart = failwith "todo"
+                 Operations.selectArticleVersionTagRecords ctx [ "WHERE article_version_id = @0" ] [ av.Id ]
+                 |> List.map (fun t -> t.Tag)
+               NextPart =
+                 articlesArr
+                 |> Array.tryItem (i + 1)
+                 |> Option.map (fun (_, npv) ->
+                     ({ Title = npv.Title
+                        TitleSlug = npv.TitleSlug }
+                     : RenderableArticlePart))
+               PreviousPart =
+                 articlesArr
+                 |> Array.tryItem (i + 1)
+                 |> Option.map (fun (_, npv) ->
+                     ({ Title = npv.Title
+                        TitleSlug = npv.TitleSlug }
+                     : RenderableArticlePart))
                AllParts = failwith "todo"
-               Links = failwith "todo" }: RenderableArticle))
+               Links = failwith "todo" }
+            : RenderableArticle))
         |> List.ofArray
