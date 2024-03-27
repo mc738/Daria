@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 10/03/2024 11:20:50 (utc) via Freql.Tools.
+/// Module generated on 27/03/2024 19:45:52 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -408,7 +408,8 @@ module Records =
           [<JsonPropertyName("resourceVersionId")>] ResourceVersionId: string
           [<JsonPropertyName("previewResourceVersionId")>] PreviewResourceVersionId: string option
           [<JsonPropertyName("url")>] Url: string
-          [<JsonPropertyName("previewUrl")>] PreviewUrl: string option }
+          [<JsonPropertyName("previewUrl")>] PreviewUrl: string option
+          [<JsonPropertyName("thanksHtml")>] ThanksHtml: string option }
     
         static member Blank() =
             { Id = String.Empty
@@ -417,7 +418,8 @@ module Records =
               ResourceVersionId = String.Empty
               PreviewResourceVersionId = None
               Url = String.Empty
-              PreviewUrl = None }
+              PreviewUrl = None
+              ThanksHtml = None }
     
         static member CreateTableSql() = """
         CREATE TABLE imagine_versions (
@@ -427,7 +429,7 @@ module Records =
 	resource_version_id TEXT NOT NULL,
 	preview_resource_version_id TEXT,
 	url TEXT NOT NULL,
-	preview_url TEXT,
+	preview_url TEXT, thanks_html TEXT,
 	CONSTRAINT imagine_versions_PK PRIMARY KEY (id),
 	CONSTRAINT imagine_versions_UN UNIQUE (image_id,version),
 	CONSTRAINT imagine_versions_FK FOREIGN KEY (resource_version_id) REFERENCES resource_versions(id),
@@ -443,7 +445,8 @@ module Records =
               imagine_versions.`resource_version_id`,
               imagine_versions.`preview_resource_version_id`,
               imagine_versions.`url`,
-              imagine_versions.`preview_url`
+              imagine_versions.`preview_url`,
+              imagine_versions.`thanks_html`
         FROM imagine_versions
         """
     
@@ -845,7 +848,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 10/03/2024 11:20:50 (utc) via Freql.Tools.
+/// Module generated on 27/03/2024 19:45:52 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -1014,7 +1017,8 @@ module Parameters =
           [<JsonPropertyName("resourceVersionId")>] ResourceVersionId: string
           [<JsonPropertyName("previewResourceVersionId")>] PreviewResourceVersionId: string option
           [<JsonPropertyName("url")>] Url: string
-          [<JsonPropertyName("previewUrl")>] PreviewUrl: string option }
+          [<JsonPropertyName("previewUrl")>] PreviewUrl: string option
+          [<JsonPropertyName("thanksHtml")>] ThanksHtml: string option }
     
         static member Blank() =
             { Id = String.Empty
@@ -1023,7 +1027,8 @@ module Parameters =
               ResourceVersionId = String.Empty
               PreviewResourceVersionId = None
               Url = String.Empty
-              PreviewUrl = None }
+              PreviewUrl = None
+              ThanksHtml = None }
     
     
     /// A record representing a new row in the table `metadata`.
@@ -1184,7 +1189,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 10/03/2024 11:20:50 (utc) via Freql.Tools.
+/// Module generated on 27/03/2024 19:45:52 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
