@@ -217,6 +217,20 @@ module PageRenderer =
         Html.renderFromParsedTemplate template pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
+    
+    let renderSeries
+        (ctx: SqliteContext)
+        (template: Mustache.Token list)
+        (depth: int)
+        (url: string)
+        (saveDirectory: string)
+        
+        =
+           
+            
+            
+            ()
+    
     let run storePath =
         use ctx = SqliteContext.Open ""
 
