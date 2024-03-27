@@ -51,7 +51,7 @@ module Articles =
             (draftStatus: DraftStatus)
             =
             let sql =
-                [ "SELECT id, article_id, version, draft_version, title, title_slug, description, hash, created_on, published_on, active FROM article_versions"
+                [ "SELECT id, article_id, version, draft_version, title, title_slug, description, hash, raw_link, override_css_name, created_on, published_on, active FROM article_versions"
                   "WHERE article_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -453,12 +453,22 @@ module Articles =
                Description = av.Description
                CreatedOn = av.CreatedOn
                PublishedOn = av.PublishedOn
-               RawLink = None
-               OverrideCssName = None
-               Image = failwith "todo"
+               RawLink = av.RawLink
+               OverrideCssName = av.OverrideCssName
+               Image =
+                 Operations.selectImagineVersionRecord ctx [ "WHERE id = @0" ] []
+                 |> Option.bind (fun iv ->
+                     Operations.selectImageRecord ctx [ "WHERE id = @0" ] [ iv.ImageId ]
+                     |> Option.map (fun ir -> ir, iv))
+                 |> Option.map (fun (ir, iv) ->
+                     ({ Name = ir.Name
+                        Thanks = iv.ThanksHtml |> Option.defaultValue ""
+                        PreviewName = iv.Id }
+                     : RenderableArticleImage))
+
                Tags =
-                 Operations.selectArticleVersionTagRecords ctx [ "WHERE article_version_id = @0" ] [ av.Id ]
-                 |> List.map (fun t -> t.Tag)
+                   Operations.selectArticleVersionTagRecords ctx [ "WHERE article_version_id = @0" ] [ av.Id ]
+                   |> List.map (fun t -> t.Tag)
                NextPart =
                  articlesArr
                  |> Array.tryItem (i + 1)
