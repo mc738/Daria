@@ -83,6 +83,8 @@ module Models =
           TitleSlug: string
           Description: string
           Hash: string
+          RawLink: string option
+          OverrideCssName: string option
           CreatedOn: DateTime
           PublishedOn: DateTime option
           Active: bool }
