@@ -435,6 +435,14 @@ module Articles =
                 |> Option.map (fun av -> ar, av))
             |> Array.ofList
 
+        let allParts =
+            articlesArr
+            |> Array.map (fun (_, avo) ->
+                ({ Title = avo.Title
+                   TitleSlug = avo.TitleSlug }
+                : RenderableArticlePart))
+            |> List.ofArray
+
         articlesArr
         |> Array.mapi (fun i (ar, av) ->
             ({ Id = ar.Id
@@ -460,12 +468,18 @@ module Articles =
                      : RenderableArticlePart))
                PreviousPart =
                  articlesArr
-                 |> Array.tryItem (i + 1)
-                 |> Option.map (fun (_, npv) ->
-                     ({ Title = npv.Title
-                        TitleSlug = npv.TitleSlug }
+                 |> Array.tryItem (i - 1)
+                 |> Option.map (fun (_, ppv) ->
+                     ({ Title = ppv.Title
+                        TitleSlug = ppv.TitleSlug }
                      : RenderableArticlePart))
-               AllParts = failwith "todo"
-               Links = failwith "todo" }
+               AllParts = allParts
+               Links =
+                 Operations.selectArticleVersionLinkRecords ctx [ "WHERE article_version_id = @0;" ] [ av.Id ]
+                 |> List.map (fun avl ->
+                     ({ Title = avl.Name
+                        Description = avl.Description
+                        Url = avl.Url }
+                     : ArticleLink)) }
             : RenderableArticle))
         |> List.ofArray
