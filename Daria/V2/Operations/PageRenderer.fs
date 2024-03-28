@@ -97,7 +97,7 @@ module PageRenderer =
         |> Map.ofList
         |> Mustache.Value.Object
 
-    let createPageData
+    let createArticlePageData
         (depth: int)
         (title: DOM.HeaderBlock)
         (description: DOM.ParagraphBlock)
@@ -168,7 +168,7 @@ module PageRenderer =
               "override_css", [ "css_url", Mustache.Value.Scalar url ] |> Map.ofList |> Mustache.Object
           | None -> () ]
 
-    let renderPage
+    let renderArticle
         (ctx: SqliteContext)
         (template: Mustache.Token list)
         (depth: int)
@@ -211,13 +211,15 @@ module PageRenderer =
               Resources = [] }
 
         let pageData =
-            ({ Values = createPageData depth title description url article |> Map.ofList
+            ({ Values = createArticlePageData depth title description url article |> Map.ofList
                Partials = Map.empty }
             : Mustache.Data)
 
         Html.renderFromParsedTemplate template pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
+    let createIndexPageData () =
+        []
 
     let rec renderSeries
         (ctx: SqliteContext)
@@ -239,23 +241,26 @@ module PageRenderer =
         Directory.CreateDirectory(dirPath) |> ignore
 
         // Render the index page.
+        let articles =  Articles.getRenderableArticles ctx series.Id
 
-        Articles.getRenderableArticles ctx series.Id
+        
+        // Render article pages.
+        articles
         |> List.iter (fun ra ->
             Articles.getArticleContent ctx ra.VersionId
-            |> Option.iter (renderPage ctx pageTemplate depth url dirPath ra))
+            |> Option.iter (renderArticle ctx pageTemplate depth url dirPath ra))
 
-        series.Children |> List.iter (renderSeries ctx pageTemplate indexTemplate (depth + 1) url dirPath)
-
-
+        series.Children
+        |> List.iter (renderSeries ctx pageTemplate indexTemplate (depth + 1) url dirPath)
 
     let run storePath =
-        use ctx = SqliteContext.Open ""
+        use ctx = SqliteContext.Open storePath
 
         let rootPath = ""
         let url = ""
 
         let pageTemplate = []
+        let indexTemplate = []
 
         Series.list ctx ActiveStatus.Active
-        |> List.iter (renderSeries ctx pageTemplate 1 url rootPath)
+        |> List.iter (renderSeries ctx pageTemplate indexTemplate 1 url rootPath)
