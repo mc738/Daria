@@ -225,7 +225,8 @@ module PageRenderer =
         (seriesVersion: SeriesVersionOverview)
         (articles: RenderableArticle list)
         =
-        [ "title", Mustache.Value.Scalar ""
+        [ "title", Mustache.Value.Scalar seriesVersion.Title
+          "title_slug", Mustache.Value.Scalar seriesVersion.TitleSlug
 
           "", Mustache.Value.Scalar seriesVersion.Description
           "",
