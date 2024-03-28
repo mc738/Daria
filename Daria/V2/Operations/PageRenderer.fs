@@ -5,6 +5,7 @@ open System.IO
 open System.Text
 open System.Text.Encodings.Web
 open Daria.V2.DataStore
+open Daria.V2.DataStore.Common
 open Daria.V2.DataStore.Models
 open FDOM.Core.Common
 open FDOM.Core.Parsing
@@ -218,26 +219,52 @@ module PageRenderer =
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
 
-    let renderSeries
+    let rec renderSeries
         (ctx: SqliteContext)
         (template: Mustache.Token list)
         (depth: int)
         (url: string)
         (saveDirectory: string)
-
+        (series: SeriesListingItem)
         =
+
+        let version =
+            series.Versions
+            |> List.filter (fun sv -> sv.DraftVersion.IsNone)
+            |> List.maxBy (fun sv -> sv.Version)
+
+        let dirPath = Path.Combine(saveDirectory, version.TitleSlug)
+
+        Directory.CreateDirectory(dirPath) |> ignore
+
+        // Render the index page.
+        
+        Articles.getRenderableArticles ctx series.Id
+        |> List.iter (fun ra ->
+            Articles.getArticleContent ctx ra.VersionId
+            |> Option.iter (fun rac -> renderPage))
+
+
+
+
+
+
+
+
 
 
 
         ()
+
+
 
     let run storePath =
         use ctx = SqliteContext.Open ""
 
+        let rootPath = ""
+        let url = ""
 
+        let template = []
 
-
-
-
-
-        ()
+        Series.list ctx ActiveStatus.Active
+        |> List.iter (renderSeries ctx [] 1 url rootPath)
