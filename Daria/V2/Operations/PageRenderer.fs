@@ -218,8 +218,34 @@ module PageRenderer =
         Html.renderFromParsedTemplate template pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
-    let createIndexPageData () =
-        []
+    let createIndexPageData
+        (ctx: SqliteContext)
+        (indexTemplate: Mustache.Token list)
+        (series: SeriesListingItem)
+        (seriesVersion: SeriesVersionOverview)
+        (articles: RenderableArticle list)
+        =
+        [ "", Mustache.Value.Scalar ""
+
+          "", Mustache.Value.Scalar seriesVersion.Description
+          "",
+          articles
+          |> List.map (fun a ->
+              [ "title", Mustache.Value.Scalar a.Title
+                "url", Mustache.Value.Scalar $"./{a.TitleSlug}.html"
+                "description", Mustache.Value.Scalar a.Description ]
+              |> Map.ofList
+              |> Mustache.Value.Object)
+          |> Mustache.Value.Array ]
+
+    let renderIndexPage
+        (ctx: SqliteContext)
+        (indexTemplate: Mustache.Token list)
+
+
+        =
+        ()
+
 
     let rec renderSeries
         (ctx: SqliteContext)
@@ -241,9 +267,9 @@ module PageRenderer =
         Directory.CreateDirectory(dirPath) |> ignore
 
         // Render the index page.
-        let articles =  Articles.getRenderableArticles ctx series.Id
+        let articles = Articles.getRenderableArticles ctx series.Id
 
-        
+
         // Render article pages.
         articles
         |> List.iter (fun ra ->
