@@ -38,11 +38,24 @@ module Series =
             static member SelectSql() =
                 "SELECT id, version, draft_version, hash, active FROM series_versions"
 
-        let fetchTopLevelSeries (ctx: SqliteContext) =
-            Operations.selectSeriesRecords ctx [ "WHERE parent_series_id IS NULL" ] []
+        let fetchTopLevelSeries (ctx: SqliteContext) (activeStatus: ActiveStatus) =
+            Operations.selectSeriesRecords
+                ctx
+                [ "WHERE parent_series_id IS NULL"
+                  match activeStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> () ]
+                []
 
-        let fetchSeriesByParent (ctx: SqliteContext) (parentSeriesId: string) =
-            Operations.selectSeriesRecords ctx [ "WHERE parent_series_id = @0" ] [ parentSeriesId ]
+        let fetchSeriesByParent (ctx: SqliteContext) (parentSeriesId: string) (activeStatus: ActiveStatus) =
+            Operations.selectSeriesRecords
+                ctx
+                [ "WHERE parent_series_id = @0"
+                  match activeStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> () ]
+                [ parentSeriesId ]
+
 
         /// <summary>
         /// This used a bespoke query bypassing `Operations` because the version blob is not needed.
@@ -156,7 +169,7 @@ module Series =
 
             addVersionTag ctx versionId t)
 
-    let list (ctx: SqliteContext) =
+    let list (ctx: SqliteContext) (activeStatus: ActiveStatus) =
         let rec build (series: Records.Series list) =
             series
             |> List.map (fun s ->
@@ -165,11 +178,11 @@ module Series =
                    Order = s.SeriesOrder
                    CreatedOn = s.CreatedOn
                    Active = s.Active
-                   Children = Internal.fetchSeriesByParent ctx s.Id |> build
+                   Children = Internal.fetchSeriesByParent ctx s.Id activeStatus |> build
                    Versions = Internal.fetchSeriesVersions ctx s.Id ActiveStatus.All DraftStatus.All }
                 : SeriesListingItem))
 
-        Internal.fetchTopLevelSeries ctx |> build
+        Internal.fetchTopLevelSeries ctx activeStatus |> build
 
     let fetchLatestVersion (ctx: SqliteContext) (seriesId: string) (includeDrafts: bool) =
         Operations.selectSeriesVersionRecord
@@ -212,7 +225,7 @@ module Series =
                 |> Operations.insertSeries ctx
 
                 AddResult.Success id
-                
+
             // TODO if it exists check of parent is the same. If not update.
 
             match newSeries.ParentId with
@@ -247,7 +260,7 @@ module Series =
                 // Uses let or else the memory stream gets disposed before being used later.
                 let ms = new MemoryStream(b)
                 ms
-                
+
         let hash =
             match newVersion.IndexBlob with
             | Blob.Prepared(_, hash) -> hash
@@ -351,7 +364,7 @@ module Series =
                 // Uses let or else the memory stream gets disposed before being used later.
                 let ms = new MemoryStream(b)
                 ms
-                
+
         let hash =
             match newVersion.IndexBlob with
             | Blob.Prepared(_, hash) -> hash
