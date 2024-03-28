@@ -221,7 +221,8 @@ module PageRenderer =
 
     let rec renderSeries
         (ctx: SqliteContext)
-        (template: Mustache.Token list)
+        (pageTemplate: Mustache.Token list)
+        (indexTemplate: Mustache.Token list)
         (depth: int)
         (url: string)
         (saveDirectory: string)
@@ -238,23 +239,13 @@ module PageRenderer =
         Directory.CreateDirectory(dirPath) |> ignore
 
         // Render the index page.
-        
+
         Articles.getRenderableArticles ctx series.Id
         |> List.iter (fun ra ->
             Articles.getArticleContent ctx ra.VersionId
-            |> Option.iter (fun rac -> renderPage))
+            |> Option.iter (renderPage ctx pageTemplate depth url dirPath ra))
 
-
-
-
-
-
-
-
-
-
-
-        ()
+        series.Children |> List.iter (renderSeries ctx pageTemplate indexTemplate (depth + 1) url dirPath)
 
 
 
@@ -264,7 +255,7 @@ module PageRenderer =
         let rootPath = ""
         let url = ""
 
-        let template = []
+        let pageTemplate = []
 
         Series.list ctx ActiveStatus.Active
-        |> List.iter (renderSeries ctx [] 1 url rootPath)
+        |> List.iter (renderSeries ctx pageTemplate 1 url rootPath)
