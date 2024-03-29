@@ -227,9 +227,8 @@ module PageRenderer =
         =
         [ "title", Mustache.Value.Scalar seriesVersion.Title
           "title_slug", Mustache.Value.Scalar seriesVersion.TitleSlug
-
           "description", Mustache.Value.Scalar seriesVersion.Description
-          "",
+          "parts",
           articles
           |> List.map (fun a ->
               [ "title", Mustache.Value.Scalar a.Title
