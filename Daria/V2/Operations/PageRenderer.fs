@@ -242,9 +242,7 @@ module PageRenderer =
         (indexTemplate: Mustache.Token list)
         (series: SeriesListingItem)
         (seriesVersion: SeriesVersionOverview)
-        
-        
-
+        (articles: RenderableArticle list)
         =
         
         
