@@ -178,7 +178,6 @@ module PageRenderer =
         (articleContent: string)
         =
 
-
         let blocks =
             Parser
                 .ParseLines(articleContent.Split Environment.NewLine |> List.ofArray)
@@ -241,9 +240,15 @@ module PageRenderer =
     let renderIndexPage
         (ctx: SqliteContext)
         (indexTemplate: Mustache.Token list)
-
+        (series: SeriesListingItem)
+        (seriesVersion: SeriesVersionOverview)
+        
+        
 
         =
+        
+        
+        
         ()
 
 
