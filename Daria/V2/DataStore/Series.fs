@@ -1,5 +1,6 @@
 ﻿namespace Daria.V2.DataStore
 
+open System.Text
 open Daria.V2.DataStore.Common
 open Daria.V2.DataStore.Models
 open Daria.V2.DataStore.Persistence
@@ -421,3 +422,7 @@ module Series =
         | false, _, _ -> AddResult.MissingRelatedEntity("series", newVersion.SeriesId)
         | _, false, _ -> AddResult.AlreadyExists id
         | _, _, false -> AddResult.NoChange id
+
+    let getSeriesIndexVersionContent (ctx: SqliteContext) (versionId: string) =
+        Operations.selectSeriesVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
+        |> Option.map (fun ar -> ar.IndexBlob.ToBytes() |> Encoding.UTF8.GetString)
