@@ -419,7 +419,7 @@ module Articles =
         | false, _ -> AddResult.AlreadyExists id
         | _, false -> AddResult.NoChange id
 
-    let getArticleContent (ctx: SqliteContext) (versionId: string) =
+    let getArticleVersionContent (ctx: SqliteContext) (versionId: string) =
         Operations.selectArticleVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
         |> Option.map (fun ar -> ar.ArticleBlob.ToBytes() |> Encoding.UTF8.GetString)
 
