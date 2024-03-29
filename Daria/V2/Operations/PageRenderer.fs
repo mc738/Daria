@@ -217,9 +217,10 @@ module PageRenderer =
         Html.renderFromParsedTemplate template pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
-    let createIndexPageData
+    let createSeriesIndexPageData
         (ctx: SqliteContext)
         (indexTemplate: Mustache.Token list)
+        
         (series: SeriesListingItem)
         (seriesVersion: SeriesVersionOverview)
         (articles: RenderableArticle list)
@@ -237,14 +238,42 @@ module PageRenderer =
               |> Mustache.Value.Object)
           |> Mustache.Value.Array ]
 
-    let renderIndexPage
+    let renderSeriesIndexPage
         (ctx: SqliteContext)
         (indexTemplate: Mustache.Token list)
+        (depth: int)
+        (url: string)
+        (saveDirectory: string)
         (series: SeriesListingItem)
         (seriesVersion: SeriesVersionOverview)
         (articles: RenderableArticle list)
         (indexContent: string)
         =
+        
+        let blocks =
+            Parser
+                .ParseLines(indexContent.Split Environment.NewLine |> List.ofArray)
+                .CreateBlockContent()
+        
+        let pageData =
+            ({ Values = createSeriesIndexPageData depth seriesVersion.Title seriesVersion.Description url article |> Map.ofList
+               Partials = Map.empty }
+            : Mustache.Data)
+        
+        let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
+
+        let title =
+            match titleBlock with
+            | DOM.BlockContent.Header h -> Some h
+            | _ -> None
+            |> Option.defaultWith (fun _ -> failwith "Missing title.")
+
+        let description =
+            match descriptionBlock with
+            | DOM.BlockContent.Paragraph p -> p
+            | _ ->
+                { Style = DOM.Style.Default
+                  Content = [ DOM.InlineContent.Text { Content = "" } ] }
         
         let doc: FDOM.Core.Common.DOM.Document =
             { Style = FDOM.Core.Common.DOM.Style.Default
@@ -257,9 +286,6 @@ module PageRenderer =
                     Content = content } ]
               Resources = [] }
 
-        
-            
-        
         Html.renderFromParsedTemplate indexTemplate pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
