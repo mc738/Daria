@@ -246,9 +246,23 @@ module PageRenderer =
         (indexContent: string)
         =
         
-            
+        let doc: FDOM.Core.Common.DOM.Document =
+            { Style = FDOM.Core.Common.DOM.Style.Default
+              Name = ""
+              Title = Some title
+              Sections =
+                [ { Style = FDOM.Core.Common.DOM.Style.Default
+                    Title = None
+                    Name = "Section 1"
+                    Content = content } ]
+              Resources = [] }
+
+        
             
         
+        Html.renderFromParsedTemplate indexTemplate pageData [] [] doc
+        |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
+
         
         ()
 
