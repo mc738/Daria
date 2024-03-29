@@ -243,8 +243,11 @@ module PageRenderer =
         (series: SeriesListingItem)
         (seriesVersion: SeriesVersionOverview)
         (articles: RenderableArticle list)
+        (indexContent: string)
         =
         
+            
+            
         
         
         ()
@@ -276,7 +279,7 @@ module PageRenderer =
         // Render article pages.
         articles
         |> List.iter (fun ra ->
-            Articles.getArticleContent ctx ra.VersionId
+            Articles.getArticleVersionContent ctx ra.VersionId
             |> Option.iter (renderArticle ctx pageTemplate depth url dirPath ra))
 
         series.Children
