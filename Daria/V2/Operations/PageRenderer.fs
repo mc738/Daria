@@ -123,8 +123,6 @@ module PageRenderer =
         =
         let localUrlPrefix = Internal.createLocalUrlPrefix depth
 
-        let parsedTitle = FDOM.Core.Parsing.BlockParser.tryParseHeaderBlock
-
         let articleUrl = $"{url}/{UrlEncoder.Default.Encode article.TitleSlug}.html"
 
         [ "title_html", Mustache.Value.Scalar <| Html.renderTitle title
@@ -340,10 +338,6 @@ module PageRenderer =
         Html.renderFromParsedTemplate indexTemplate pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, "index.html"), r)
 
-
-        ()
-
-
     let rec renderSeries
         (ctx: SqliteContext)
         (pageTemplate: Mustache.Token list)
@@ -366,7 +360,10 @@ module PageRenderer =
         // Render the index page.
         let articles = Articles.getRenderableArticles ctx series.Id
 
-
+        // TODO Better handling if series content is not found (but in reality it should be).
+        Series.getSeriesIndexVersionContent ctx version.Id
+        |> Option.iter (renderSeriesIndexPage ctx indexTemplate depth url dirPath series version articles)
+        
         // Render article pages.
         articles
         |> List.iter (fun ra ->
