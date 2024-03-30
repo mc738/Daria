@@ -120,6 +120,7 @@ module PageRenderer =
           "title_text", Mustache.Value.Scalar <| title.GetRawText()
           "description_html", Mustache.Value.Scalar <| Html.renderDescription description
           "description_text", Mustache.Value.Scalar <| description.GetRawText()
+          "local_url_prefix", Mustache.Value.Scalar urlDepth
           "sections",
           Mustache.Value.Array
               [ [ "collection_title", Mustache.Value.Scalar "Parts"
