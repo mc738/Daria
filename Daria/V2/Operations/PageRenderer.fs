@@ -287,7 +287,7 @@ module PageRenderer =
               Resources = [] }
 
         Html.renderFromParsedTemplate indexTemplate pageData [] [] doc
-        |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
+        |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, "index.html"), r)
 
         
         ()
