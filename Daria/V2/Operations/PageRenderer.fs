@@ -15,6 +15,23 @@ open Freql.Sqlite
 open SQLitePCL
 
 module PageRenderer =
+    
+    module Internal =
+        
+        /// <summary>
+        /// A function to create a local url prefix based on the "depth" of a entity.
+        /// For example, top level entities (i.e. in the main directory) will return ".".
+        /// Entities in a subdirectory (depth 1) will return "..".
+        /// Entities in with a depth 2 will return "../..".
+        /// </summary>
+        /// <param name="depth">The current depth.</param>
+        let createLocalUrlPrefix (depth: int) =
+            match depth >= 1 with
+            | true ->
+                [ for i in 0 .. (depth - 1) do
+                      ".." ]
+                |> String.concat "/"
+            | _ -> "."
 
     type ShareLinkType =
         | Facebook
@@ -229,6 +246,7 @@ module PageRenderer =
         [ "title", Mustache.Value.Scalar seriesVersion.Title
           "title_slug", Mustache.Value.Scalar seriesVersion.TitleSlug
           "description", Mustache.Value.Scalar seriesVersion.Description
+          "local_url_prefix", Mustache.Value.Scalar urlDepth
           "parts",
           articles
           |> List.map (fun a ->
