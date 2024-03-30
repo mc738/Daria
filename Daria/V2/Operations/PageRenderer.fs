@@ -174,8 +174,8 @@ module PageRenderer =
           | Some name ->
               let url =
                   match name.EndsWith(".css") with
-                  | true -> $"{urlDepth}/{name}"
-                  | false -> $"{urlDepth}/{name}.css"
+                  | true -> $"{localUrlPrefix}/css/{name}"
+                  | false -> $"{localUrlPrefix}/css/{name}.css"
 
               "override_css", [ "css_url", Mustache.Value.Scalar url ] |> Map.ofList |> Mustache.Object
           | None -> () ]
@@ -230,17 +230,23 @@ module PageRenderer =
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, $"{article.TitleSlug}.html"), r)
 
     let createSeriesIndexPageData
-        (ctx: SqliteContext)
-        (indexTemplate: Mustache.Token list)
-
+        (depth: int)
+        (title: DOM.HeaderBlock)
+        (description: DOM.ParagraphBlock)
+        (url: string)
         (series: SeriesListingItem)
         (seriesVersion: SeriesVersionOverview)
         (articles: RenderableArticle list)
         =
-        [ "title", Mustache.Value.Scalar seriesVersion.Title
+        let localUrlPrefix = Internal.createLocalUrlPrefix depth
+        
+        
+        [ "title_html", Mustache.Value.Scalar <| Html.renderTitle title
+          "title_text", Mustache.Value.Scalar <| title.GetRawText()
+          "description_html", Mustache.Value.Scalar <| Html.renderDescription description
+          "description_text", Mustache.Value.Scalar <| description.GetRawText()
           "title_slug", Mustache.Value.Scalar seriesVersion.TitleSlug
-          "description", Mustache.Value.Scalar seriesVersion.Description
-          "local_url_prefix", Mustache.Value.Scalar urlDepth
+          "local_url_prefix", Mustache.Value.Scalar localUrlPrefix
           "parts",
           articles
           |> List.map (fun a ->
@@ -277,15 +283,30 @@ module PageRenderer =
         (articles: RenderableArticle list)
         (indexContent: string)
         =
-
+        
         let blocks =
             Parser
                 .ParseLines(indexContent.Split Environment.NewLine |> List.ofArray)
                 .CreateBlockContent()
+                    
+        let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
+
+        let title =
+            match titleBlock with
+            | DOM.BlockContent.Header h -> Some h
+            | _ -> None
+            |> Option.defaultWith (fun _ -> failwith "Missing title.")
+
+        let description =
+            match descriptionBlock with
+            | DOM.BlockContent.Paragraph p -> p
+            | _ ->
+                { Style = DOM.Style.Default
+                  Content = [ DOM.InlineContent.Text { Content = "" } ] }
 
         let pageData =
             ({ Values =
-                createSeriesIndexPageData depth seriesVersion.Title seriesVersion.Description url article
+                createSeriesIndexPageData depth title description url series seriesVersion articles
                 |> Map.ofList
                Partials = Map.empty }
             : Mustache.Data)
