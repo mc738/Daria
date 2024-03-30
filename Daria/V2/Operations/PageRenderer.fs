@@ -220,7 +220,7 @@ module PageRenderer =
     let createSeriesIndexPageData
         (ctx: SqliteContext)
         (indexTemplate: Mustache.Token list)
-        
+
         (series: SeriesListingItem)
         (seriesVersion: SeriesVersionOverview)
         (articles: RenderableArticle list)
@@ -236,6 +236,21 @@ module PageRenderer =
                 "description", Mustache.Value.Scalar a.Description ]
               |> Map.ofList
               |> Mustache.Value.Object)
+          |> Mustache.Value.Array
+          "series",
+          series.Children
+          |> List.choose (fun s ->
+              s.Versions
+              |> List.filter (fun sv -> sv.Active && sv.DraftVersion.IsNone)
+              |> List.sortByDescending (fun sv -> sv.Version)
+              |> List.tryHead
+              |> Option.map (fun sv ->
+                  [ "title", Mustache.Value.Scalar sv.Title
+                    "title_slug", Mustache.Value.Scalar sv.TitleSlug
+                    "description", Mustache.Value.Scalar sv.Description
+                    "url", Mustache.Value.Scalar $"./{sv.TitleSlug}/index.html" ]
+                  |> Map.ofList
+                  |> Mustache.Value.Object))
           |> Mustache.Value.Array ]
 
     let renderSeriesIndexPage
@@ -249,17 +264,19 @@ module PageRenderer =
         (articles: RenderableArticle list)
         (indexContent: string)
         =
-        
+
         let blocks =
             Parser
                 .ParseLines(indexContent.Split Environment.NewLine |> List.ofArray)
                 .CreateBlockContent()
-        
+
         let pageData =
-            ({ Values = createSeriesIndexPageData depth seriesVersion.Title seriesVersion.Description url article |> Map.ofList
+            ({ Values =
+                createSeriesIndexPageData depth seriesVersion.Title seriesVersion.Description url article
+                |> Map.ofList
                Partials = Map.empty }
             : Mustache.Data)
-        
+
         let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
 
         let title =
@@ -274,7 +291,7 @@ module PageRenderer =
             | _ ->
                 { Style = DOM.Style.Default
                   Content = [ DOM.InlineContent.Text { Content = "" } ] }
-        
+
         let doc: FDOM.Core.Common.DOM.Document =
             { Style = FDOM.Core.Common.DOM.Style.Default
               Name = ""
@@ -289,7 +306,7 @@ module PageRenderer =
         Html.renderFromParsedTemplate indexTemplate pageData [] [] doc
         |> fun r -> File.WriteAllText(Path.Combine(saveDirectory, "index.html"), r)
 
-        
+
         ()
 
 
