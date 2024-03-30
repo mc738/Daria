@@ -121,13 +121,7 @@ module PageRenderer =
         (url: string)
         (article: RenderableArticle)
         =
-        let urlDepth =
-            match depth >= 1 with
-            | true ->
-                [ for i in 0 .. (depth - 1) do
-                      ".." ]
-                |> String.concat "/"
-            | _ -> "."
+        let localUrlPrefix = Internal.createLocalUrlPrefix depth
 
         let parsedTitle = FDOM.Core.Parsing.BlockParser.tryParseHeaderBlock
 
@@ -137,7 +131,7 @@ module PageRenderer =
           "title_text", Mustache.Value.Scalar <| title.GetRawText()
           "description_html", Mustache.Value.Scalar <| Html.renderDescription description
           "description_text", Mustache.Value.Scalar <| description.GetRawText()
-          "local_url_prefix", Mustache.Value.Scalar urlDepth
+          "local_url_prefix", Mustache.Value.Scalar localUrlPrefix
           "sections",
           Mustache.Value.Array
               [ [ "collection_title", Mustache.Value.Scalar "Parts"
@@ -168,8 +162,8 @@ module PageRenderer =
           "gh_issue_link", Mustache.Value.Scalar <| createIssueLink article.Title
           match article.Image with
           | Some rai ->
-              "image", Mustache.Value.Scalar $"{urlDepth}/img/{rai.Name}"
-              "preview_image", Mustache.Value.Scalar $"{urlDepth}/img/{rai.PreviewName}"
+              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rai.Name}"
+              "preview_image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rai.PreviewName}"
               "thanks", Mustache.Value.Scalar rai.Thanks
           | None -> ()
 
