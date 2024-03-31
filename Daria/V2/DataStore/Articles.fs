@@ -493,3 +493,7 @@ module Articles =
                      : ArticleLink)) }
             : RenderableArticle))
         |> List.ofArray
+
+    
+    let getLatestCreatedArticleVersions (ctx: SqliteContext) (count: int) (activeStatus: ActiveStatus) (draftStatus: DraftStatus) =
+        Operations.selectArticleVersionRecords ctx [ "WHERE " ]
