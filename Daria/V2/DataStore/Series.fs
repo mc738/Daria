@@ -426,3 +426,7 @@ module Series =
     let getSeriesIndexVersionContent (ctx: SqliteContext) (versionId: string) =
         Operations.selectSeriesVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
         |> Option.map (fun ar -> ar.IndexBlob.ToBytes() |> Encoding.UTF8.GetString)
+
+    let getSeriesVersionTags (ctx: SqliteContext) (versionId: string) =
+        Operations.selectSeriesVersionTagRecords ctx [ "WHERE series_version_id = @0" ] [ versionId ]
+        |> List.map (fun svt -> svt.Tag)
