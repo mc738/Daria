@@ -147,6 +147,30 @@ module Series =
             : Parameters.NewSeriesVersionMetadataItem)
             |> Operations.insertSeriesVersionMetadataItem ctx
 
+        let fetchRenderableSeriesIndexes (ctx: SqliteContext) (series: Records.Series list) =
+
+            let seriesArr =
+                series
+                |> List.choose (fun sr ->
+                    fetchLatestVersionListing ctx sr.Id ActiveStatus.Active DraftStatus.NotDraft
+                    |> Option.map (fun sv -> sr, sv))
+
+            seriesArr
+            |> List.map (fun (sr, svr) ->
+                ({ Id = sr.Id
+                   VersionId = svr.Id
+                   Version = svr.Version
+                   Title = "" //svr.
+                   TitleSlug = failwith "todo"
+                   Description = failwith "todo"
+                   CreatedOn = failwith "todo"
+                   PublishedOn = None
+                   Articles = failwith "todo"
+                   Series = failwith "todo"
+                   Image = failwith "todo"
+                   Tags = failwith "todo" }
+                : RenderableSeriesIndex))
+
     open Internal
 
     let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) =
