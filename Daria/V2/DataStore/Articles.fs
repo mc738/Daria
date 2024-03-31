@@ -148,6 +148,74 @@ module Articles =
             : Parameters.NewArticleVersionMetadataItem)
             |> Operations.insertArticleVersionMetadataItem ctx
 
+        let fetchRenderableArticles (ctx: SqliteContext) (articles: Records.Article list) =
+
+            let articlesArr =
+                fetchFn ()
+                |> List.choose (fun ar ->
+                    fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
+                    |> Option.map (fun av -> ar, av))
+                |> Array.ofList
+
+            let allParts =
+                articlesArr
+                |> Array.map (fun (_, avo) ->
+                    ({ Title = avo.Title
+                       TitleSlug = avo.TitleSlug }
+                    : RenderableArticlePart))
+                |> List.ofArray
+
+            articlesArr
+            |> Array.mapi (fun i (ar, av) ->
+                ({ Id = ar.Id
+                   VersionId = av.Id
+                   Version = av.Version
+                   Title = av.Title
+                   TitleSlug = av.TitleSlug
+                   Description = av.Description
+                   CreatedOn = av.CreatedOn
+                   PublishedOn = av.PublishedOn
+                   RawLink = av.RawLink
+                   OverrideCssName = av.OverrideCssName
+                   Image =
+                     Operations.selectImagineVersionRecord ctx [ "WHERE id = @0" ] []
+                     |> Option.bind (fun iv ->
+                         Operations.selectImageRecord ctx [ "WHERE id = @0" ] [ iv.ImageId ]
+                         |> Option.map (fun ir -> ir, iv))
+                     |> Option.map (fun (ir, iv) ->
+                         ({ Name = ir.Name
+                            Thanks = iv.ThanksHtml |> Option.defaultValue ""
+                            PreviewName = iv.Id }
+                         : RenderableArticleImage))
+
+                   Tags =
+                       Operations.selectArticleVersionTagRecords ctx [ "WHERE article_version_id = @0" ] [ av.Id ]
+                       |> List.map (fun t -> t.Tag)
+                   NextPart =
+                     articlesArr
+                     |> Array.tryItem (i + 1)
+                     |> Option.map (fun (_, npv) ->
+                         ({ Title = npv.Title
+                            TitleSlug = npv.TitleSlug }
+                         : RenderableArticlePart))
+                   PreviousPart =
+                     articlesArr
+                     |> Array.tryItem (i - 1)
+                     |> Option.map (fun (_, ppv) ->
+                         ({ Title = ppv.Title
+                            TitleSlug = ppv.TitleSlug }
+                         : RenderableArticlePart))
+                   AllParts = allParts
+                   Links =
+                     Operations.selectArticleVersionLinkRecords ctx [ "WHERE article_version_id = @0;" ] [ av.Id ]
+                     |> List.map (fun avl ->
+                         ({ Title = avl.Name
+                            Description = avl.Description
+                            Url = avl.Url }
+                         : ArticleLink)) }
+                : RenderableArticle))
+            |> List.ofArray
+
     open Internal
 
     let rec fetchArticleVersionOverviews (ctx: SqliteContext) (articleId: string) =
@@ -424,76 +492,18 @@ module Articles =
         |> Option.map (fun ar -> ar.ArticleBlob.ToBytes() |> Encoding.UTF8.GetString)
 
     let getRenderableArticles (ctx: SqliteContext) (seriesId: string) =
-        // First get the articles and latest version as an array
-        let articlesArr =
-            Operations.selectArticleRecords
-                ctx
-                [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order" ]
-                [ seriesId ]
-            |> List.choose (fun ar ->
-                fetchLatestVersionOverview ctx ar.Id ActiveStatus.Active DraftStatus.NotDraft
-                |> Option.map (fun av -> ar, av))
-            |> Array.ofList
+        Operations.selectArticleRecords
+            ctx
+            [ "WHERE series_id = @0 AND active = TRUE ORDER BY article_order" ]
+            [ seriesId ]
+        |> fetchRenderableArticles ctx
 
-        let allParts =
-            articlesArr
-            |> Array.map (fun (_, avo) ->
-                ({ Title = avo.Title
-                   TitleSlug = avo.TitleSlug }
-                : RenderableArticlePart))
-            |> List.ofArray
 
-        articlesArr
-        |> Array.mapi (fun i (ar, av) ->
-            ({ Id = ar.Id
-               VersionId = av.Id
-               Version = av.Version
-               Title = av.Title
-               TitleSlug = av.TitleSlug
-               Description = av.Description
-               CreatedOn = av.CreatedOn
-               PublishedOn = av.PublishedOn
-               RawLink = av.RawLink
-               OverrideCssName = av.OverrideCssName
-               Image =
-                 Operations.selectImagineVersionRecord ctx [ "WHERE id = @0" ] []
-                 |> Option.bind (fun iv ->
-                     Operations.selectImageRecord ctx [ "WHERE id = @0" ] [ iv.ImageId ]
-                     |> Option.map (fun ir -> ir, iv))
-                 |> Option.map (fun (ir, iv) ->
-                     ({ Name = ir.Name
-                        Thanks = iv.ThanksHtml |> Option.defaultValue ""
-                        PreviewName = iv.Id }
-                     : RenderableArticleImage))
-
-               Tags =
-                   Operations.selectArticleVersionTagRecords ctx [ "WHERE article_version_id = @0" ] [ av.Id ]
-                   |> List.map (fun t -> t.Tag)
-               NextPart =
-                 articlesArr
-                 |> Array.tryItem (i + 1)
-                 |> Option.map (fun (_, npv) ->
-                     ({ Title = npv.Title
-                        TitleSlug = npv.TitleSlug }
-                     : RenderableArticlePart))
-               PreviousPart =
-                 articlesArr
-                 |> Array.tryItem (i - 1)
-                 |> Option.map (fun (_, ppv) ->
-                     ({ Title = ppv.Title
-                        TitleSlug = ppv.TitleSlug }
-                     : RenderableArticlePart))
-               AllParts = allParts
-               Links =
-                 Operations.selectArticleVersionLinkRecords ctx [ "WHERE article_version_id = @0;" ] [ av.Id ]
-                 |> List.map (fun avl ->
-                     ({ Title = avl.Name
-                        Description = avl.Description
-                        Url = avl.Url }
-                     : ArticleLink)) }
-            : RenderableArticle))
-        |> List.ofArray
-
-    
-    let getLatestCreatedArticleVersions (ctx: SqliteContext) (count: int) (activeStatus: ActiveStatus) (draftStatus: DraftStatus) =
-        Operations.selectArticleVersionRecords ctx [ "WHERE " ]
+    let getLatestCreatedRenderableArticles
+        (ctx: SqliteContext)
+        (count: int)
+        //(activeStatus: ActiveStatus)
+        //(draftStatus: DraftStatus)
+        =
+        Operations.selectArticleRecords ctx [ "ORDER BY DATE(created_on) DESC"; "LIMIT @0" ] [ count ]
+        |> fetchRenderableArticles ctx
