@@ -65,14 +65,14 @@ module Series =
         /// <param name="seriesId"></param>
         /// <param name="activeStatus"></param>
         /// <param name="draftStatus"></param>
-        let fetchSeriesVersions
+        let fetchSeriesVersionOverviews
             (ctx: SqliteContext)
             (seriesId: string)
             (activeStatus: ActiveStatus)
             (draftStatus: DraftStatus)
             =
             let sql =
-                [ "SELECT id, series_id, version, draft_version, title, title_slug, description, hash, created_on, active FROM series_versions"
+                [ "SELECT id, series_id, version, draft_version, title, title_slug, description, hash, imagine_version_id, created_on, active FROM series_versions"
                   "WHERE series_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -81,9 +81,31 @@ module Series =
                   | Some v -> v
                   | None -> () ]
                 |> toSql
-
+                
             ctx.SelectAnon<SeriesVersionOverview>(sql, [ seriesId ])
 
+        let fetchSeriesVersionOverview
+            (ctx: SqliteContext)
+            (seriesId: string)
+            (activeStatus: ActiveStatus)
+            (draftStatus: DraftStatus)
+            =
+            let sql =
+                [ "SELECT id, series_id, version, draft_version, title, title_slug, description, hash, imagine_version_id, created_on, active FROM series_versions"
+                  "WHERE series_id = @0"
+                  match activeStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> ()
+                  match draftStatus.ToSqlOption("AND ") with
+                  | Some v -> v
+                  | None -> ()
+                  "ORDER BY version DESC, draft_version DESC"
+                  "LIMIT 1" ]
+                |> toSql
+                
+            ctx.SelectSingleAnon<SeriesVersionOverview>(sql, [ seriesId ])
+
+        
         let fetchSeriesVersionListings
             (ctx: SqliteContext)
             (seriesId: string)
@@ -152,7 +174,7 @@ module Series =
             let seriesArr =
                 series
                 |> List.choose (fun sr ->
-                    fetchLatestVersionListing ctx sr.Id ActiveStatus.Active DraftStatus.NotDraft
+                    fetchSeriesVersionOverview ctx sr.Id ActiveStatus.Active DraftStatus.NotDraft
                     |> Option.map (fun sv -> sr, sv))
 
             seriesArr
@@ -160,22 +182,33 @@ module Series =
                 ({ Id = sr.Id
                    VersionId = svr.Id
                    Version = svr.Version
-                   Title = "" //svr.
-                   TitleSlug = failwith "todo"
-                   Description = failwith "todo"
-                   CreatedOn = failwith "todo"
-                   PublishedOn = None
+                   Title = svr.Title
+                   TitleSlug = svr.TitleSlug
+                   Description = svr.Description
+                   CreatedOn = svr.CreatedOn
                    Articles = failwith "todo"
                    Series = failwith "todo"
-                   Image = failwith "todo"
-                   Tags = failwith "todo" }
+                   Image =
+                     svr.ImageVersionId
+                     |> Option.bind (fun iv -> Operations.selectImagineVersionRecord ctx [ "WHERE id = @0" ] [ iv ])
+                     |> Option.bind (fun iv ->
+                         Operations.selectImageRecord ctx [ "WHERE id = @0" ] [ iv.ImageId ]
+                         |> Option.map (fun ir -> ir, iv))
+                     |> Option.map (fun (ir, iv) ->
+                         ({ Name = ir.Name
+                            Thanks = iv.ThanksHtml |> Option.defaultValue ""
+                            PreviewName = iv.Id }
+                         : RenderableSeriesIndexImage))
+                   Tags =
+                       Operations.selectSeriesVersionTagRecords ctx [ "WHERE series_version_id = @0" ] [ svr.Id ]
+                       |> List.map (fun t -> t.Tag) }
                 : RenderableSeriesIndex))
 
     open Internal
 
     let rec fetchSeriesVersionOverviews (ctx: SqliteContext) (seriesId: string) =
         // TODO finish
-        Internal.fetchSeriesVersions
+        Internal.fetchSeriesVersionOverviews
 
     let exists (ctx: SqliteContext) (seriesId: string) =
         Operations.selectSeriesRecord ctx [ "WHERE id = @0;" ] [ seriesId ]
