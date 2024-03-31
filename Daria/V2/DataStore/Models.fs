@@ -143,3 +143,27 @@ module Models =
           Thanks: string }
 
     and RenderableArticlePart = { Title: string; TitleSlug: string }
+
+    type RenderableSeriesIndex =
+        { Id: string
+          VersionId: string
+          Version: int
+          Articles: RenderableSeriesIndexArticlePart list
+          Series: RenderableSeriesIndexSeriesPart list
+          Image: RenderableSeriesIndexImage option
+          Tags: string list }
+
+    and RenderableSeriesIndexImage =
+        { Name: string
+          PreviewName: string
+          Thanks: string }
+
+    and RenderableSeriesIndexArticlePart =
+        { Title: string
+          TitleSlug: string
+          Description: string }
+
+    and RenderableSeriesIndexSeriesPart =
+        { Title: string
+          TitleSlug: string
+          Description: string }
