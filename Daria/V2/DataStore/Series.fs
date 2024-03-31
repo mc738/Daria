@@ -81,7 +81,7 @@ module Series =
                   | Some v -> v
                   | None -> () ]
                 |> toSql
-                
+
             ctx.SelectAnon<SeriesVersionOverview>(sql, [ seriesId ])
 
         let fetchSeriesVersionOverview
@@ -102,10 +102,10 @@ module Series =
                   "ORDER BY version DESC, draft_version DESC"
                   "LIMIT 1" ]
                 |> toSql
-                
+
             ctx.SelectSingleAnon<SeriesVersionOverview>(sql, [ seriesId ])
 
-        
+
         let fetchSeriesVersionListings
             (ctx: SqliteContext)
             (seriesId: string)
@@ -186,8 +186,37 @@ module Series =
                    TitleSlug = svr.TitleSlug
                    Description = svr.Description
                    CreatedOn = svr.CreatedOn
-                   Articles = failwith "todo"
-                   Series = failwith "todo"
+                   Articles =
+                     Operations.selectArticleRecords
+                         ctx
+                         [ "WHERE series_id = @0 AND active = TRUE"; "ORDER BY order" ]
+                         [ sr.Id ]
+                     |> List.choose (fun ar ->
+                         Operations.selectArticleVersionRecord
+                             ctx
+                             [ "WHERE article_id = @0 AND active = TRUE AND draft_version IS NULL"
+                               "ORDER BY version"
+                               "LIMIT 1" ]
+                             [ ar.Id ]
+                         |> Option.map (fun avr ->
+                             ({ Title = avr.Title
+                                TitleSlug = avr.TitleSlug
+                                Description = avr.Description }
+                             : RenderableSeriesIndexArticlePart)))
+                   Series =
+                     fetchSeriesByParent ctx sr.Id ActiveStatus.Active
+                     |> List.choose (fun csr ->
+                         Operations.selectSeriesVersionRecord
+                             ctx
+                             [ "WHERE series_id = @0 AND active = TRUE AND draft_version IS NULL"
+                               "ORDER BY version"
+                               "LIMIT 1" ]
+                             [ csr.Id ]
+                         |> Option.map (fun csv ->
+                             ({ Title = csv.Title
+                                TitleSlug = csv.TitleSlug
+                                Description = csv.Description }
+                             : RenderableSeriesIndexSeriesPart)))
                    Image =
                      svr.ImageVersionId
                      |> Option.bind (fun iv -> Operations.selectImagineVersionRecord ctx [ "WHERE id = @0" ] [ iv ])
@@ -200,8 +229,8 @@ module Series =
                             PreviewName = iv.Id }
                          : RenderableSeriesIndexImage))
                    Tags =
-                       Operations.selectSeriesVersionTagRecords ctx [ "WHERE series_version_id = @0" ] [ svr.Id ]
-                       |> List.map (fun t -> t.Tag) }
+                     Operations.selectSeriesVersionTagRecords ctx [ "WHERE series_version_id = @0" ] [ svr.Id ]
+                     |> List.map (fun t -> t.Tag) }
                 : RenderableSeriesIndex))
 
     open Internal
@@ -237,7 +266,7 @@ module Series =
                    CreatedOn = s.CreatedOn
                    Active = s.Active
                    Children = Internal.fetchSeriesByParent ctx s.Id activeStatus |> build
-                   Versions = Internal.fetchSeriesVersions ctx s.Id ActiveStatus.All DraftStatus.All }
+                   Versions = Internal.fetchSeriesVersionOverviews ctx s.Id ActiveStatus.All DraftStatus.All }
                 : SeriesListingItem))
 
         Internal.fetchTopLevelSeries ctx activeStatus |> build
@@ -487,3 +516,17 @@ module Series =
     let getSeriesVersionTags (ctx: SqliteContext) (versionId: string) =
         Operations.selectSeriesVersionTagRecords ctx [ "WHERE series_version_id = @0" ] [ versionId ]
         |> List.map (fun svt -> svt.Tag)
+
+    let getTopLevelRenderableSeries (ctx: SqliteContext) =
+        Operations.selectSeriesRecords
+            ctx
+            [ "WHERE parent_series_id IS NULL AND active = TRUE ORDER BY series_order" ]
+            []
+        |> fetchRenderableSeriesIndexes ctx
+
+    let getRenderableSeriesForParent (ctx: SqliteContext) (parentSeriesId: string) =
+        Operations.selectSeriesRecords
+            ctx
+            [ "WHERE parent_series_id = @0 AND active = TRUE ORDER BY series_order" ]
+            [ parentSeriesId ]
+        |> fetchRenderableSeriesIndexes ctx
