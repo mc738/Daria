@@ -91,7 +91,7 @@ module Series =
             (draftStatus: DraftStatus)
             =
             let sql =
-                [ "SELECT id, series_id, version, draft_version, title, title_slug, description, hash, imagine_version_id, created_on, active FROM series_versions"
+                [ "SELECT id, series_id, version, draft_version, title, title_slug, description, hash, image_version_id, created_on, active FROM series_versions"
                   "WHERE series_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -189,7 +189,7 @@ module Series =
                    Articles =
                      Operations.selectArticleRecords
                          ctx
-                         [ "WHERE series_id = @0 AND active = TRUE"; "ORDER BY order" ]
+                         [ "WHERE series_id = @0 AND active = TRUE"; "ORDER BY article_order" ]
                          [ sr.Id ]
                      |> List.choose (fun ar ->
                          Operations.selectArticleVersionRecord
