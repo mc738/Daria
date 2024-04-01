@@ -244,6 +244,7 @@ module PageRenderer =
           "title_slug", Mustache.Value.Scalar series.TitleSlug
           "local_url_prefix", Mustache.Value.Scalar localUrlPrefix
           "tags", createTagsData series.Tags
+
           "parts",
           articles
           |> List.map (fun a ->
@@ -253,16 +254,39 @@ module PageRenderer =
               |> Map.ofList
               |> Mustache.Value.Object)
           |> Mustache.Value.Array
-          "series",
-          series.Series
-          |> List.map (fun s ->
-              [ "title", Mustache.Value.Scalar s.Title
-                "title_slug", Mustache.Value.Scalar s.TitleSlug
-                "description", Mustache.Value.Scalar s.Description
-                "url", Mustache.Value.Scalar $"./{s.TitleSlug}/index.html" ]
+
+          match articles.IsEmpty with
+          | true -> ()
+          | false ->
+              "articles",
+              [ "items",
+                articles
+                |> List.map (fun a ->
+                    [ "title", Mustache.Value.Scalar a.Title
+                      "url", Mustache.Value.Scalar $"./{a.TitleSlug}.html"
+                      "description", Mustache.Value.Scalar a.Description ]
+                    |> Map.ofList
+                    |> Mustache.Value.Object)
+                |> Mustache.Value.Array ]
               |> Map.ofList
-              |> Mustache.Value.Object)
-          |> Mustache.Value.Array ]
+              |> Mustache.Value.Object
+
+          match series.Series.IsEmpty with
+          | true -> ()
+          | false ->
+              "series",
+              [ "items",
+                series.Series
+                |> List.map (fun s ->
+                    [ "title", Mustache.Value.Scalar s.Title
+                      "title_slug", Mustache.Value.Scalar s.TitleSlug
+                      "description", Mustache.Value.Scalar s.Description
+                      "url", Mustache.Value.Scalar $"./{s.TitleSlug}/index.html" ]
+                    |> Map.ofList
+                    |> Mustache.Value.Object)
+                |> Mustache.Value.Array ]
+              |> Map.ofList
+              |> Mustache.Value.Object ]
 
     let renderSeriesIndexPage
         (ctx: SqliteContext)
@@ -327,6 +351,7 @@ module PageRenderer =
         =
 
         let dirPath = Path.Combine(saveDirectory, series.TitleSlug)
+        let newUrl = $"{url}/{series.TitleSlug}"
 
         Directory.CreateDirectory(dirPath) |> ignore
 
@@ -335,16 +360,16 @@ module PageRenderer =
 
         // TODO Better handling if series content is not found (but in reality it should be).
         Series.getSeriesIndexVersionContent ctx series.VersionId
-        |> Option.iter (renderSeriesIndexPage ctx indexTemplate depth url dirPath series articles)
+        |> Option.iter (renderSeriesIndexPage ctx indexTemplate depth newUrl dirPath series articles)
 
         // Render article pages.
         articles
         |> List.iter (fun ra ->
             Articles.getArticleVersionContent ctx ra.VersionId
-            |> Option.iter (renderArticle ctx pageTemplate depth url dirPath ra))
+            |> Option.iter (renderArticle ctx pageTemplate depth newUrl dirPath ra))
 
         Series.getRenderableSeriesForParent ctx series.Id
-        |> List.iter (renderSeries ctx pageTemplate indexTemplate (depth + 1) url dirPath)
+        |> List.iter (renderSeries ctx pageTemplate indexTemplate (depth + 1) newUrl dirPath)
 
     module Index =
 
@@ -451,15 +476,23 @@ module PageRenderer =
                 : Mustache.Data)
 
             Mustache.replace data true template
+            
+        let renderIndex (ctx: SqliteContext) (template: Mustache.Token list) (savePath: string) =
+            buildIndex template ctx |> fun r -> File.WriteAllText(Path.Combine(savePath, "index.html"), r)
+            
 
     let run storePath =
         use ctx = SqliteContext.Open storePath
 
-        let rootPath = ""
-        let url = ""
+        let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
+        let url = "https://blog.psionic.cloud/"
 
-        let pageTemplate = []
-        let indexTemplate = []
+        let pageTemplate = File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache" |> Mustache.parse
+        let seriesIndexTemplate = File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache" |> Mustache.parse
+        let indexTemplate = File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache" |> Mustache.parse
 
         Series.getTopLevelRenderableSeries ctx
-        |> List.iter (renderSeries ctx pageTemplate indexTemplate 1 url rootPath)
+        |> List.iter (renderSeries ctx pageTemplate seriesIndexTemplate 1 url rootPath)
+
+        Index.renderIndex ctx indexTemplate rootPath
+        
