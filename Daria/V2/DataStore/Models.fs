@@ -35,6 +35,7 @@ module Models =
           TitleSlug: string
           Description: string
           Hash: string
+          ImageVersionId: string option
           CreatedOn: DateTime
           Active: bool }
 
@@ -83,6 +84,7 @@ module Models =
           TitleSlug: string
           Description: string
           Hash: string
+          ImageVersionId: string option
           RawLink: string option
           OverrideCssName: string option
           CreatedOn: DateTime
@@ -148,6 +150,10 @@ module Models =
         { Id: string
           VersionId: string
           Version: int
+          Title: string
+          TitleSlug: string
+          Description: string
+          CreatedOn: DateTime
           Articles: RenderableSeriesIndexArticlePart list
           Series: RenderableSeriesIndexSeriesPart list
           Image: RenderableSeriesIndexImage option
