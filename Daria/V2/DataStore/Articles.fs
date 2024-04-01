@@ -51,7 +51,7 @@ module Articles =
             (draftStatus: DraftStatus)
             =
             let sql =
-                [ "SELECT id, article_id, version, draft_version, title, title_slug, description, hash, imagine_version_id, raw_link, override_css_name, created_on, published_on, active FROM article_versions"
+                [ "SELECT id, article_id, version, draft_version, title, title_slug, description, hash, image_version_id, raw_link, override_css_name, created_on, published_on, active FROM article_versions"
                   "WHERE article_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
@@ -112,7 +112,7 @@ module Articles =
             =
 
             let sql =
-                [ "SELECT id, article_id, version, draft_version, title, title_slug, description, hash, imagine_version_id, created_on, published_on, active FROM article_versions"
+                [ "SELECT id, article_id, version, draft_version, title, title_slug, description, hash, image_version_id, raw_link, override_css_name, created_on, published_on, active FROM article_versions"
                   "WHERE article_id = @0"
                   match activeStatus.ToSqlOption("AND ") with
                   | Some v -> v
