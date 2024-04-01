@@ -232,21 +232,18 @@ module PageRenderer =
         (title: DOM.HeaderBlock)
         (description: DOM.ParagraphBlock)
         (url: string)
-        (series: SeriesListingItem)
-        (seriesVersion: SeriesVersionOverview)
+        (series: RenderableSeriesIndex)
         (articles: RenderableArticle list)
-        (tags: string list)
         =
         let localUrlPrefix = Internal.createLocalUrlPrefix depth
-
 
         [ "title_html", Mustache.Value.Scalar <| Html.renderTitle title
           "title_text", Mustache.Value.Scalar <| title.GetRawText()
           "description_html", Mustache.Value.Scalar <| Html.renderDescription description
           "description_text", Mustache.Value.Scalar <| description.GetRawText()
-          "title_slug", Mustache.Value.Scalar seriesVersion.TitleSlug
+          "title_slug", Mustache.Value.Scalar series.TitleSlug
           "local_url_prefix", Mustache.Value.Scalar localUrlPrefix
-          "tags", createTagsData tags
+          "tags", createTagsData series.Tags
           "parts",
           articles
           |> List.map (fun a ->
@@ -257,19 +254,14 @@ module PageRenderer =
               |> Mustache.Value.Object)
           |> Mustache.Value.Array
           "series",
-          series.Children
-          |> List.choose (fun s ->
-              s.Versions
-              |> List.filter (fun sv -> sv.Active && sv.DraftVersion.IsNone)
-              |> List.sortByDescending (fun sv -> sv.Version)
-              |> List.tryHead
-              |> Option.map (fun sv ->
-                  [ "title", Mustache.Value.Scalar sv.Title
-                    "title_slug", Mustache.Value.Scalar sv.TitleSlug
-                    "description", Mustache.Value.Scalar sv.Description
-                    "url", Mustache.Value.Scalar $"./{sv.TitleSlug}/index.html" ]
-                  |> Map.ofList
-                  |> Mustache.Value.Object))
+          series.Series
+          |> List.map (fun s ->
+              [ "title", Mustache.Value.Scalar s.Title
+                "title_slug", Mustache.Value.Scalar s.TitleSlug
+                "description", Mustache.Value.Scalar s.Description
+                "url", Mustache.Value.Scalar $"./{s.TitleSlug}/index.html" ]
+              |> Map.ofList
+              |> Mustache.Value.Object)
           |> Mustache.Value.Array ]
 
     let renderSeriesIndexPage
@@ -278,8 +270,7 @@ module PageRenderer =
         (depth: int)
         (url: string)
         (saveDirectory: string)
-        (series: SeriesListingItem)
-        (seriesVersion: SeriesVersionOverview)
+        (series: RenderableSeriesIndex)
         (articles: RenderableArticle list)
         (indexContent: string)
         =
@@ -304,29 +295,12 @@ module PageRenderer =
                 { Style = DOM.Style.Default
                   Content = [ DOM.InlineContent.Text { Content = "" } ] }
 
-        let tags = Series.getSeriesVersionTags ctx seriesVersion.Id
-
         let pageData =
             ({ Values =
-                createSeriesIndexPageData depth title description url series seriesVersion articles tags
+                createSeriesIndexPageData depth title description url series articles
                 |> Map.ofList
                Partials = Map.empty }
             : Mustache.Data)
-
-        let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
-
-        let title =
-            match titleBlock with
-            | DOM.BlockContent.Header h -> Some h
-            | _ -> None
-            |> Option.defaultWith (fun _ -> failwith "Missing title.")
-
-        let description =
-            match descriptionBlock with
-            | DOM.BlockContent.Paragraph p -> p
-            | _ ->
-                { Style = DOM.Style.Default
-                  Content = [ DOM.InlineContent.Text { Content = "" } ] }
 
         let doc: FDOM.Core.Common.DOM.Document =
             { Style = FDOM.Core.Common.DOM.Style.Default
@@ -349,15 +323,10 @@ module PageRenderer =
         (depth: int)
         (url: string)
         (saveDirectory: string)
-        (series: SeriesListingItem)
+        (series: RenderableSeriesIndex)
         =
 
-        let version =
-            series.Versions
-            |> List.filter (fun sv -> sv.DraftVersion.IsNone)
-            |> List.maxBy (fun sv -> sv.Version)
-
-        let dirPath = Path.Combine(saveDirectory, version.TitleSlug)
+        let dirPath = Path.Combine(saveDirectory, series.TitleSlug)
 
         Directory.CreateDirectory(dirPath) |> ignore
 
@@ -365,8 +334,8 @@ module PageRenderer =
         let articles = Articles.getRenderableArticles ctx series.Id
 
         // TODO Better handling if series content is not found (but in reality it should be).
-        Series.getSeriesIndexVersionContent ctx version.Id
-        |> Option.iter (renderSeriesIndexPage ctx indexTemplate depth url dirPath series version articles)
+        Series.getSeriesIndexVersionContent ctx series.VersionId
+        |> Option.iter (renderSeriesIndexPage ctx indexTemplate depth url dirPath series articles)
 
         // Render article pages.
         articles
@@ -374,42 +343,39 @@ module PageRenderer =
             Articles.getArticleVersionContent ctx ra.VersionId
             |> Option.iter (renderArticle ctx pageTemplate depth url dirPath ra))
 
-        series.Children
+        Series.getRenderableSeriesForParent ctx series.Id
         |> List.iter (renderSeries ctx pageTemplate indexTemplate (depth + 1) url dirPath)
 
     module Index =
-        
-        let createPageItem (ctx: SqliteContext) (series: SeriesListingItem) (seriesVersion: SeriesVersionOverview) =
-            let tags = Series.getSeriesVersionTags ctx seriesVersion.Id
 
-            [ "item_name", Mustache.Value.Scalar series.Name
-              "item_description", Mustache.Value.Scalar seriesVersion.Description
-              "item_image", Mustache.Value.Scalar series.DisplayImage
-              match DataStore.getFirstArticle ctx series.Name with
-              | Some a ->
-                  "item_link",
-                  [ "url", Mustache.Scalar a.Url ]
-                  |> Map.ofList
-                  |> Mustache.Object
+        let createPageItem (ctx: SqliteContext) (series: RenderableSeriesIndex) =
+            [ "item_name", Mustache.Value.Scalar series.Title
+              "item_description", Mustache.Value.Scalar series.Description
+              match series.Image with
+              | Some i -> "item_image", Mustache.Value.Scalar $"./img/{i.Name}" // NOTE this assumes the image will be in the img directory.
               | None -> ()
+              "item_link",
+              [ "url", Mustache.Scalar $"./{series.TitleSlug}/index.html" ]
+              |> Map.ofList
+              |> Mustache.Object
               "item_tags",
-              tags
-              |> List.map (fun t ->
-                  [ "tag", Mustache.Value.Scalar t ]
-                  |> Map.ofList
-                  |> Mustache.Value.Object)
+              series.Tags
+              |> List.map (fun t -> [ "tag", Mustache.Value.Scalar t ] |> Map.ofList |> Mustache.Value.Object)
               |> Mustache.Array ]
             |> Map.ofList
             |> Mustache.Value.Object
 
-        let createPageItems (ctx: SqliteContext) (isFirst: bool) (isLast: bool) (index: int) (series: SeriesListingItem list) =
+        let createPageItems
+            (ctx: SqliteContext)
+            (isFirst: bool)
+            (isLast: bool)
+            (index: int)
+            (series: RenderableSeriesIndex list)
+            =
 
             [ "page_id", Mustache.Value.Scalar $"page-{index + 1}"
               "page_name", Mustache.Value.Scalar $"Page {index + 1}"
-              "page_items",
-              series
-              |> List.map (createPageItem ctx)
-              |> Mustache.Value.Array
+              "page_items", series |> List.map (createPageItem ctx) |> Mustache.Value.Array
               match isFirst |> not with
               | true ->
                   "prev_page",
@@ -428,57 +394,64 @@ module PageRenderer =
             |> Map.ofList
             |> Mustache.Value.Object
 
-        let createPages (ctx: SqliteContext) =
-            let series =
-                DataStore.getOrderedSeries ctx
-                |> List.chunkBySize 4
+        let createPages (ctx: SqliteContext) (topLevelSeries: RenderableSeriesIndex list) =
+            let series = topLevelSeries |> List.chunkBySize 4
 
             series
             |> List.mapi (fun i s -> createPageItems ctx (i = 0) (i = series.Length - 1) i s)
             |> Mustache.Value.Array
 
-        let createLatestPost (article: Records.Article) (version: Records.ArticleVersion) =
-            [ "post_name", Mustache.Value.Scalar article.Name
+        let createLatestPost (ctx: SqliteContext) (article: RenderableArticle) =
+            [ "post_name", Mustache.Value.Scalar article.Title
               "post_description", Mustache.Value.Scalar article.Description
               "post_date",
-              Mustache.Value.Scalar
-              <| version.PublishDate.ToString("dd MMMM yyyy")
-              "post_image", Mustache.Value.Scalar article.DisplayImage
-              "post_link", Mustache.Value.Scalar article.Url ]
+              article.PublishedOn
+              |> Option.defaultValue article.CreatedOn
+              |> fun dt -> dt.ToString("dd MMMM yyyy")
+              |> Mustache.Value.Scalar
+
+              match article.Image with
+              | Some pi -> "post_image", Mustache.Value.Scalar $"./img/{pi.Name}"
+              | None -> ()
+
+              match Articles.createArticleLinkParts ctx article.VersionId with
+              | Some ap ->
+                  "post_link",
+                  // Need way to create title slug link.
+                  String.concat "/" ap |> (fun r -> $"./{r}") |> Mustache.Value.Scalar
+              | None -> () ]
             |> Map.ofList
             |> Mustache.Value.Object
 
         let createLatestPosts (ctx: SqliteContext) =
-            DataStore.getLatestPosts ctx 3
-            |> List.map (fun (a, v) -> createLatestPost a v)
+            Articles.getLatestCreatedRenderableArticles ctx 3
+            |> List.map (createLatestPost ctx)
             |> Mustache.Value.Array
 
-        let createLink (ctx: SqliteContext) (series: Records.Series) =
-            DataStore.getFirstArticle ctx series.Name
-            |> Option.map (fun fa ->
-                [ "series_name", Mustache.Value.Scalar series.Name
-                  "series_url", Mustache.Value.Scalar fa.Url ]
-                |> Map.ofList
-                |> Mustache.Value.Object)
+        let createLink (ctx: SqliteContext) (series: RenderableSeriesIndex) =
+            [ "series_name", Mustache.Value.Scalar series.TitleSlug
+              "series_url", Mustache.Value.Scalar $"./{series.TitleSlug}/index.html" ]
+            |> Map.ofList
+            |> Mustache.Value.Object
 
-        let createLinks (ctx: SqliteContext) =
-            DataStore.getOrderedSeries ctx
-            |> List.map (createLink ctx)
-            |> List.choose id
-            |> Mustache.Value.Array
-        
+        let createLinks (ctx: SqliteContext) (topLevelSeries: RenderableSeriesIndex list) =
+            topLevelSeries |> List.map (createLink ctx) |> Mustache.Value.Array
+
         let buildIndex (template: Mustache.Token list) (ctx: SqliteContext) =
+
+            let topLevelSeries = Series.getTopLevelRenderableSeries ctx
 
             let data =
                 ({ Values =
-                    [ "pages", createPages ctx
+                    [ "pages", createPages ctx topLevelSeries
                       "recent_posts", createLatestPosts ctx
-                      "series", createLinks ctx ]
+                      "series", createLinks ctx topLevelSeries ]
                     |> Map.ofList
-                   Partials = Map.empty }: Mustache.Data)
+                   Partials = Map.empty }
+                : Mustache.Data)
 
             Mustache.replace data true template
-    
+
     let run storePath =
         use ctx = SqliteContext.Open storePath
 
@@ -488,5 +461,5 @@ module PageRenderer =
         let pageTemplate = []
         let indexTemplate = []
 
-        Series.list ctx ActiveStatus.Active
+        Series.getTopLevelRenderableSeries ctx
         |> List.iter (renderSeries ctx pageTemplate indexTemplate 1 url rootPath)
