@@ -499,7 +499,6 @@ module Articles =
             [ seriesId ]
         |> fetchRenderableArticles ctx
 
-
     let getLatestCreatedRenderableArticles
         (ctx: SqliteContext)
         (count: int)
@@ -508,3 +507,30 @@ module Articles =
         =
         Operations.selectArticleRecords ctx [ "ORDER BY DATE(created_on) DESC"; "LIMIT @0" ] [ count ]
         |> fetchRenderableArticles ctx
+
+
+    let createArticleLinkParts (ctx: SqliteContext) (versionId: string) =
+
+        let rec traverse (acc: string list) (seriesId: string) =
+            match Operations.selectSeriesRecord ctx [ "WHERE id = @0" ] [ seriesId ] with
+            | Some sr ->
+                match
+                    Operations.selectSeriesVersionRecord
+                        ctx
+                        [ "WHERE series_id = 0 AND active = TRUE and draft_version IS NULL"
+                          "ORDER BY version DESC"
+                          "LIMIT 1" ]
+                        [ sr.Id ]
+                with
+                | Some svr ->
+                    match sr.ParentSeriesId with
+                    | Some pid -> traverse (svr.TitleSlug :: acc) pid
+                    | None -> (svr.TitleSlug :: acc)
+                | None -> acc
+            | None -> acc
+            
+        Operations.selectArticleVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
+        |> Option.bind (fun av ->
+            match Operations.selectArticleRecord ctx [ "WHERE id = @0" ] [ av.ArticleId ] with
+            | Some ar -> traverse [ $"{av.TitleSlug}.html" ] ar.SeriesId |> Some
+            | None -> None)
