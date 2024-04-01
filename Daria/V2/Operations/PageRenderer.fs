@@ -190,8 +190,8 @@ module PageRenderer =
 
         let blocks =
             Parser
-                .ParseLines(articleContent.Split Environment.NewLine |> List.ofArray)
-                .CreateBlockContent()
+                .ParseLinesAndMetadata(articleContent.Split Environment.NewLine |> List.ofArray)
+                |> fun (p, _) -> p.CreateBlockContent()
 
         let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
 
@@ -301,8 +301,8 @@ module PageRenderer =
 
         let blocks =
             Parser
-                .ParseLines(indexContent.Split Environment.NewLine |> List.ofArray)
-                .CreateBlockContent()
+                .ParseLinesAndMetadata(indexContent.Split Environment.NewLine |> List.ofArray)
+                |> fun (p, _) -> p.CreateBlockContent()
 
         let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
 
