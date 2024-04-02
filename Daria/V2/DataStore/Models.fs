@@ -6,6 +6,7 @@ module Models =
 
     open System
     open Daria.V2.DataStore.Common
+    open Daria.V2.Common.Domain
 
     type ImageVersionDetails = { Id: string }
 
@@ -113,7 +114,14 @@ module Models =
           Tags: string list
           Metadata: Map<string, string> }
 
-    type ResourceVersionOverview = { Id: string }
+    type ResourceVersionOverview =
+        { Id: string
+          ResourceId: string
+          Version: int
+          Hash: string
+          FileType: FileType
+          EncryptionType: EncryptionType
+          CompressionType: CompressionType }
 
     type ArticleLink =
         { Title: string
