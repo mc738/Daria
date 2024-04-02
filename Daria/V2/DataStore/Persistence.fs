@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 27/03/2024 19:45:52 (utc) via Freql.Tools.
+/// Module generated on 02/04/2024 17:45:25 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -161,7 +161,7 @@ module Records =
 	CONSTRAINT article_versions_PK PRIMARY KEY (id),
 	CONSTRAINT article_versions_UN UNIQUE (article_id,version,draft_version),
 	CONSTRAINT article_versions_FK FOREIGN KEY (article_id) REFERENCES articles(id),
-	CONSTRAINT article_versions_FK_1 FOREIGN KEY (image_version_id) REFERENCES imagine_versions(id)
+	CONSTRAINT article_versions_FK_1 FOREIGN KEY (image_version_id) REFERENCES image_versions(id)
 )
         """
     
@@ -374,6 +374,59 @@ module Records =
     
         static member TableName() = "file_types"
     
+    /// A record representing a row in the table `image_versions`.
+    type ImageVersion =
+        { [<JsonPropertyName("id")>] Id: string
+          [<JsonPropertyName("imageId")>] ImageId: string
+          [<JsonPropertyName("version")>] Version: int
+          [<JsonPropertyName("resourceVersionId")>] ResourceVersionId: string
+          [<JsonPropertyName("previewResourceVersionId")>] PreviewResourceVersionId: string option
+          [<JsonPropertyName("url")>] Url: string
+          [<JsonPropertyName("previewUrl")>] PreviewUrl: string option
+          [<JsonPropertyName("thanksHtml")>] ThanksHtml: string option }
+    
+        static member Blank() =
+            { Id = String.Empty
+              ImageId = String.Empty
+              Version = 0
+              ResourceVersionId = String.Empty
+              PreviewResourceVersionId = None
+              Url = String.Empty
+              PreviewUrl = None
+              ThanksHtml = None }
+    
+        static member CreateTableSql() = """
+        CREATE TABLE image_versions (
+	id TEXT NOT NULL,
+	image_id TEXT NOT NULL,
+	version INTEGER NOT NULL,
+	resource_version_id TEXT NOT NULL,
+	preview_resource_version_id TEXT,
+	url TEXT NOT NULL,
+	preview_url TEXT, thanks_html TEXT,
+	CONSTRAINT image_versions_PK PRIMARY KEY (id),
+	CONSTRAINT image_versions_UN UNIQUE (image_id,version),
+	CONSTRAINT image_versions_FK FOREIGN KEY (image_id) REFERENCES images(id),
+	CONSTRAINT image_versions_FK_1 FOREIGN KEY (resource_version_id) REFERENCES resource_versions(id),
+	CONSTRAINT image_versions_FK_2 FOREIGN KEY (preview_resource_version_id) REFERENCES resource_versions(id)
+)
+        """
+    
+        static member SelectSql() = """
+        SELECT
+              image_versions.`id`,
+              image_versions.`image_id`,
+              image_versions.`version`,
+              image_versions.`resource_version_id`,
+              image_versions.`preview_resource_version_id`,
+              image_versions.`url`,
+              image_versions.`preview_url`,
+              image_versions.`thanks_html`
+        FROM image_versions
+        """
+    
+        static member TableName() = "image_versions"
+    
     /// A record representing a row in the table `images`.
     type Image =
         { [<JsonPropertyName("id")>] Id: string
@@ -399,58 +452,6 @@ module Records =
         """
     
         static member TableName() = "images"
-    
-    /// A record representing a row in the table `imagine_versions`.
-    type ImagineVersion =
-        { [<JsonPropertyName("id")>] Id: string
-          [<JsonPropertyName("imageId")>] ImageId: string
-          [<JsonPropertyName("version")>] Version: int
-          [<JsonPropertyName("resourceVersionId")>] ResourceVersionId: string
-          [<JsonPropertyName("previewResourceVersionId")>] PreviewResourceVersionId: string option
-          [<JsonPropertyName("url")>] Url: string
-          [<JsonPropertyName("previewUrl")>] PreviewUrl: string option
-          [<JsonPropertyName("thanksHtml")>] ThanksHtml: string option }
-    
-        static member Blank() =
-            { Id = String.Empty
-              ImageId = String.Empty
-              Version = 0
-              ResourceVersionId = String.Empty
-              PreviewResourceVersionId = None
-              Url = String.Empty
-              PreviewUrl = None
-              ThanksHtml = None }
-    
-        static member CreateTableSql() = """
-        CREATE TABLE imagine_versions (
-	id TEXT NOT NULL,
-	image_id TEXT NOT NULL,
-	version INTEGER NOT NULL,
-	resource_version_id TEXT NOT NULL,
-	preview_resource_version_id TEXT,
-	url TEXT NOT NULL,
-	preview_url TEXT, thanks_html TEXT,
-	CONSTRAINT imagine_versions_PK PRIMARY KEY (id),
-	CONSTRAINT imagine_versions_UN UNIQUE (image_id,version),
-	CONSTRAINT imagine_versions_FK FOREIGN KEY (resource_version_id) REFERENCES resource_versions(id),
-	CONSTRAINT imagine_versions_FK_1 FOREIGN KEY (resource_version_id) REFERENCES resource_versions(id)
-)
-        """
-    
-        static member SelectSql() = """
-        SELECT
-              imagine_versions.`id`,
-              imagine_versions.`image_id`,
-              imagine_versions.`version`,
-              imagine_versions.`resource_version_id`,
-              imagine_versions.`preview_resource_version_id`,
-              imagine_versions.`url`,
-              imagine_versions.`preview_url`,
-              imagine_versions.`thanks_html`
-        FROM imagine_versions
-        """
-    
-        static member TableName() = "imagine_versions"
     
     /// A record representing a row in the table `metadata`.
     type MetadataItem =
@@ -710,7 +711,7 @@ module Records =
 	CONSTRAINT series_versions_PK PRIMARY KEY (id),
 	CONSTRAINT series_versions_UN UNIQUE (series_id,version,draft_version),
 	CONSTRAINT series_versions_FK FOREIGN KEY (series_id) REFERENCES series(id),
-	CONSTRAINT series_versions_FK_1 FOREIGN KEY (image_version_id) REFERENCES imagine_versions(id)
+	CONSTRAINT series_versions_FK_1 FOREIGN KEY (image_version_id) REFERENCES image_versions(id)
 )
         """
     
@@ -848,7 +849,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 27/03/2024 19:45:52 (utc) via Freql.Tools.
+/// Module generated on 02/04/2024 17:45:25 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -999,18 +1000,8 @@ module Parameters =
               ContentType = String.Empty }
     
     
-    /// A record representing a new row in the table `images`.
-    type NewImage =
-        { [<JsonPropertyName("id")>] Id: string
-          [<JsonPropertyName("name")>] Name: string }
-    
-        static member Blank() =
-            { Id = String.Empty
-              Name = String.Empty }
-    
-    
-    /// A record representing a new row in the table `imagine_versions`.
-    type NewImagineVersion =
+    /// A record representing a new row in the table `image_versions`.
+    type NewImageVersion =
         { [<JsonPropertyName("id")>] Id: string
           [<JsonPropertyName("imageId")>] ImageId: string
           [<JsonPropertyName("version")>] Version: int
@@ -1029,6 +1020,16 @@ module Parameters =
               Url = String.Empty
               PreviewUrl = None
               ThanksHtml = None }
+    
+    
+    /// A record representing a new row in the table `images`.
+    type NewImage =
+        { [<JsonPropertyName("id")>] Id: string
+          [<JsonPropertyName("name")>] Name: string }
+    
+        static member Blank() =
+            { Id = String.Empty
+              Name = String.Empty }
     
     
     /// A record representing a new row in the table `metadata`.
@@ -1189,7 +1190,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 27/03/2024 19:45:52 (utc) via Freql.Tools.
+/// Module generated on 02/04/2024 17:45:25 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
@@ -1435,6 +1436,30 @@ module Operations =
     let insertFileType (context: SqliteContext) (parameters: Parameters.NewFileType) =
         context.Insert("file_types", parameters)
     
+    /// Select a `Records.ImageVersion` from the table `image_versions`.
+    /// Internally this calls `context.SelectSingleAnon<Records.ImageVersion>` and uses Records.ImageVersion.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectImageVersionRecord ctx "WHERE `field` = @0" [ box `value` ]
+    let selectImageVersionRecord (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.ImageVersion.SelectSql() ] @ query |> buildSql
+        context.SelectSingleAnon<Records.ImageVersion>(sql, parameters)
+    
+    /// Internally this calls `context.SelectAnon<Records.ImageVersion>` and uses Records.ImageVersion.SelectSql().
+    /// The caller can provide extra string lines to create a query and boxed parameters.
+    /// It is up to the caller to verify the sql and parameters are correct,
+    /// this should be considered an internal function (not exposed in public APIs).
+    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
+    /// Example: selectImageVersionRecords ctx "WHERE `field` = @0" [ box `value` ]
+    let selectImageVersionRecords (context: SqliteContext) (query: string list) (parameters: obj list) =
+        let sql = [ Records.ImageVersion.SelectSql() ] @ query |> buildSql
+        context.SelectAnon<Records.ImageVersion>(sql, parameters)
+    
+    let insertImageVersion (context: SqliteContext) (parameters: Parameters.NewImageVersion) =
+        context.Insert("image_versions", parameters)
+    
     /// Select a `Records.Image` from the table `images`.
     /// Internally this calls `context.SelectSingleAnon<Records.Image>` and uses Records.Image.SelectSql().
     /// The caller can provide extra string lines to create a query and boxed parameters.
@@ -1458,30 +1483,6 @@ module Operations =
     
     let insertImage (context: SqliteContext) (parameters: Parameters.NewImage) =
         context.Insert("images", parameters)
-    
-    /// Select a `Records.ImagineVersion` from the table `imagine_versions`.
-    /// Internally this calls `context.SelectSingleAnon<Records.ImagineVersion>` and uses Records.ImagineVersion.SelectSql().
-    /// The caller can provide extra string lines to create a query and boxed parameters.
-    /// It is up to the caller to verify the sql and parameters are correct,
-    /// this should be considered an internal function (not exposed in public APIs).
-    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
-    /// Example: selectImagineVersionRecord ctx "WHERE `field` = @0" [ box `value` ]
-    let selectImagineVersionRecord (context: SqliteContext) (query: string list) (parameters: obj list) =
-        let sql = [ Records.ImagineVersion.SelectSql() ] @ query |> buildSql
-        context.SelectSingleAnon<Records.ImagineVersion>(sql, parameters)
-    
-    /// Internally this calls `context.SelectAnon<Records.ImagineVersion>` and uses Records.ImagineVersion.SelectSql().
-    /// The caller can provide extra string lines to create a query and boxed parameters.
-    /// It is up to the caller to verify the sql and parameters are correct,
-    /// this should be considered an internal function (not exposed in public APIs).
-    /// Parameters are assigned names based on their order in 0 indexed array. For example: @0,@1,@2...
-    /// Example: selectImagineVersionRecords ctx "WHERE `field` = @0" [ box `value` ]
-    let selectImagineVersionRecords (context: SqliteContext) (query: string list) (parameters: obj list) =
-        let sql = [ Records.ImagineVersion.SelectSql() ] @ query |> buildSql
-        context.SelectAnon<Records.ImagineVersion>(sql, parameters)
-    
-    let insertImagineVersion (context: SqliteContext) (parameters: Parameters.NewImagineVersion) =
-        context.Insert("imagine_versions", parameters)
     
     /// Select a `Records.MetadataItem` from the table `metadata`.
     /// Internally this calls `context.SelectSingleAnon<Records.MetadataItem>` and uses Records.MetadataItem.SelectSql().
