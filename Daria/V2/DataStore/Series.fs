@@ -1,6 +1,7 @@
 ﻿namespace Daria.V2.DataStore
 
 open System.Text
+open Daria.V2.Common.Domain
 open Daria.V2.DataStore.Common
 open Daria.V2.DataStore.Models
 open Daria.V2.DataStore.Persistence
@@ -219,14 +220,18 @@ module Series =
                              : RenderableSeriesIndexSeriesPart)))
                    Image =
                      svr.ImageVersionId
-                     |> Option.bind (fun iv -> Operations.selectImagineVersionRecord ctx [ "WHERE id = @0" ] [ iv ])
+                     |> Option.bind (fun iv -> Operations.selectImageVersionRecord ctx [ "WHERE id = @0" ] [ iv ])
                      |> Option.bind (fun iv ->
                          Operations.selectImageRecord ctx [ "WHERE id = @0" ] [ iv.ImageId ]
                          |> Option.map (fun ir -> ir, iv))
-                     |> Option.map (fun (ir, iv) ->
+                     |> Option.bind (fun (ir, iv) ->
+                         Operations.selectResourceVersionRecord ctx [ "WHERE id = @0" ] [ iv.ResourceVersionId ]
+                         |> Option.map (fun rv -> ir, iv, rv))
+                     |> Option.map (fun (ir, iv, rv) ->
                          ({ Name = ir.Name
+                            Extension = FileType.GetFileExtensionFromString rv.FileType 
                             Thanks = iv.ThanksHtml |> Option.defaultValue ""
-                            PreviewName = iv.Id }
+                            PreviewUrl = iv.PreviewUrl }
                          : RenderableSeriesIndexImage))
                    Tags =
                      Operations.selectSeriesVersionTagRecords ctx [ "WHERE series_version_id = @0" ] [ svr.Id ]
