@@ -160,8 +160,13 @@ module PageRenderer =
           "gh_issue_link", Mustache.Value.Scalar <| createIssueLink article.Title
           match article.Image with
           | Some rai ->
-              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rai.Name}"
-              "preview_image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rai.PreviewName}"
+              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rai.Name}{rai.Extension}"
+
+              "preview_image",
+              rai.PreviewUrl
+              |> Option.defaultValue $"{localUrlPrefix}/img/{rai.Name}{rai.Extension}"
+              |> Mustache.Value.Scalar
+
               "thanks", Mustache.Value.Scalar rai.Thanks
           | None -> ()
 
@@ -189,9 +194,8 @@ module PageRenderer =
         =
 
         let blocks =
-            Parser
-                .ParseLinesAndMetadata(articleContent.Split Environment.NewLine |> List.ofArray)
-                |> fun (p, _) -> p.CreateBlockContent()
+            Parser.ParseLinesAndMetadata(articleContent.Split Environment.NewLine |> List.ofArray)
+            |> fun (p, _) -> p.CreateBlockContent()
 
         let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
 
@@ -244,6 +248,18 @@ module PageRenderer =
           "title_slug", Mustache.Value.Scalar series.TitleSlug
           "local_url_prefix", Mustache.Value.Scalar localUrlPrefix
           "tags", createTagsData series.Tags
+
+          match series.Image with
+          | Some rsi ->
+              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rsi.Name}{rsi.Extension}"
+
+              "preview_image",
+              rsi.PreviewUrl
+              |> Option.defaultValue $"{localUrlPrefix}/img/{rsi.Name}{rsi.Extension}"
+              |> Mustache.Value.Scalar
+
+              "thanks", Mustache.Value.Scalar rsi.Thanks
+          | None -> ()
 
           "parts",
           articles
@@ -300,9 +316,8 @@ module PageRenderer =
         =
 
         let blocks =
-            Parser
-                .ParseLinesAndMetadata(indexContent.Split Environment.NewLine |> List.ofArray)
-                |> fun (p, _) -> p.CreateBlockContent()
+            Parser.ParseLinesAndMetadata(indexContent.Split Environment.NewLine |> List.ofArray)
+            |> fun (p, _) -> p.CreateBlockContent()
 
         let (titleBlock, descriptionBlock, content) = blocks.[0], blocks.[1], blocks.[2..]
 
@@ -476,10 +491,11 @@ module PageRenderer =
                 : Mustache.Data)
 
             Mustache.replace data true template
-            
+
         let renderIndex (ctx: SqliteContext) (template: Mustache.Token list) (savePath: string) =
-            buildIndex template ctx |> fun r -> File.WriteAllText(Path.Combine(savePath, "index.html"), r)
-            
+            buildIndex template ctx
+            |> fun r -> File.WriteAllText(Path.Combine(savePath, "index.html"), r)
+
 
     let run storePath =
         use ctx = SqliteContext.Open storePath
@@ -487,12 +503,19 @@ module PageRenderer =
         let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
         let url = "https://blog.psionic.cloud/"
 
-        let pageTemplate = File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache" |> Mustache.parse
-        let seriesIndexTemplate = File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache" |> Mustache.parse
-        let indexTemplate = File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache" |> Mustache.parse
+        let pageTemplate =
+            File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache"
+            |> Mustache.parse
+
+        let seriesIndexTemplate =
+            File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache"
+            |> Mustache.parse
+
+        let indexTemplate =
+            File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache"
+            |> Mustache.parse
 
         Series.getTopLevelRenderableSeries ctx
         |> List.iter (renderSeries ctx pageTemplate seriesIndexTemplate 1 url rootPath)
 
         Index.renderIndex ctx indexTemplate rootPath
-        
