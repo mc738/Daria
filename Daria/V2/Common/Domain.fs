@@ -102,6 +102,10 @@ module Domain =
               FileType.Wmv
               FileType.WebM ]
 
+        static member GetFileExtensionFromString(fileType: string) =
+            FileType.Deserialize fileType |> Option.defaultValue FileType.Binary
+            |> fun r -> r.GetExtension()
+        
         static member TryDeserialize(str: string) =
             match str.ToLower() with
             | "bin"
