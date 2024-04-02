@@ -32,8 +32,7 @@ module Articles =
               Version: int
               DraftVersion: int option
               Hash: string
-              Active: bool
-              Draft: bool }
+              Active: bool }
 
             static member SelectSql() =
                 "SELECT id, version, draft_version, hash, active FROM article_versions"
@@ -359,6 +358,7 @@ module Articles =
         // If it was use it's version number and increment the draft version.
         // If it wasn't increment the version number and reset the draft number.
         // If it doesn't exist start at the beginning.
+        // TODO does this need to check if article exists?
         let version, draftVersion, prevHash =
             match fetchLatestVersionListing ctx newVersion.ArticleId ActiveStatus.Active DraftStatus.All with
             | Some pv ->
