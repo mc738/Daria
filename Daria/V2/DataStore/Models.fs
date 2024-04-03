@@ -3,6 +3,7 @@
 #nowarn "100001"
 
 open Daria.V2.Common.Domain
+open Daria.V2.DataStore.Common
 
 module Models =
 
@@ -125,6 +126,8 @@ module Models =
           EncryptionType: EncryptionType
           CompressionType: CompressionType }
 
+    type NewResource = { Id: IdType; Name: string }
+
     type NewResourceVersion =
         { Id: IdType
           ResourceId: string
@@ -133,6 +136,17 @@ module Models =
           FileType: FileType
           EncryptionType: EncryptionType
           CompressionType: CompressionType }
+
+    type NewImage = { Id: IdType; Name: string }
+    
+    type NewImageVersion =
+        { Id: IdType
+          ImageId: string
+          ResourceVersion: NewResourceVersion
+          PreviewResourceVersion: NewResourceVersion option
+          Url: string
+          PreviewUrl: string option
+          ThanksHtml: string option }
 
     type ArticleLink =
         { Title: string
