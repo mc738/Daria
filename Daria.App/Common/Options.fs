@@ -7,13 +7,21 @@ module Options =
 
     open FsToolbox.AppEnvironment.Args.Mapping
 
-    type AppOptions = | [<CommandValue("import")>] Import of ImportOptions
+    type AppOptions =
+        | [<CommandValue("import")>] Import of ImportOptions
+        | [<CommandValue("build")>] Build of BuildOptions
 
     and ImportOptions =
         { [<ArgValue("-p", "--path")>]
           SettingsPath: string
           [<ArgValue("-v", "--verbose")>]
           Verbose: bool }
+        
+    and BuildOptions =
+        {
+            [<ArgValue("-s", "--datastore")>]
+            DataStorePath: string
+        }
 
 
     let getOptions _ =
