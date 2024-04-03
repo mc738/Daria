@@ -1,15 +1,11 @@
 ﻿namespace Daria.V2.DataStore
 
 #nowarn "100001"
-
-open Daria.V2.Common.Domain
-open Daria.V2.DataStore.Common
-
 module Models =
 
     open System
-    open Daria.V2.DataStore.Common
     open Daria.V2.Common.Domain
+    open Daria.V2.DataStore.Common
 
     type ImageVersionDetails = { Id: string }
 
