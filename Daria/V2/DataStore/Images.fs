@@ -1,5 +1,6 @@
 ﻿namespace Daria.V2.DataStore
 
+open Daria.V2.DataStore.Models
 open Daria.V2.DataStore.Persistence
 open Freql.Sqlite
 
@@ -9,10 +10,10 @@ module Images =
     module Internal =
 
 
-        let getSpecificVersion (ctx: SqliteContext) (imageId: string) (version: int) =
+        let fetchSpecificVersion (ctx: SqliteContext) (imageId: string) (version: int) =
             Operations.selectImageVersionRecord ctx [ "WHERE image_id = @0 AND version = @1" ] [ imageId; version ]
 
-        let getLatestVersion (ctx: SqliteContext) (imageId: string) =
+        let fetchLatestVersion (ctx: SqliteContext) (imageId: string) =
             Operations.selectImageVersionRecord
                 ctx
                 [ "WHERE image_id = @0"; "ORDER BY version DESC"; "LIMIT 1" ]
@@ -24,4 +25,18 @@ module Images =
 
 
 
+        ()
+
+
+    let addVersion (ctx: SqliteContext) (newVersion: NewImageVersion) =
+        
+        let id = newVersion.Id.ToString()
+
+        // First check if the version exists (or what the latest version is)
+        
+        match Internal.fetchLatestVersion ctx newVersion.ImageId with
+        | Some lv -> ()
+        | None -> ()
+        
+        
         ()
