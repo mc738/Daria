@@ -2,6 +2,8 @@
 
 #nowarn "100001"
 
+open Daria.V2.Common.Domain
+
 module Models =
 
     open System
@@ -123,6 +125,15 @@ module Models =
           EncryptionType: EncryptionType
           CompressionType: CompressionType }
 
+    type NewResourceVersion =
+        { Id: IdType
+          ResourceId: string
+          ResourceBlob: Blob
+          CreatedOn: DateTime option
+          FileType: FileType
+          EncryptionType: EncryptionType
+          CompressionType: CompressionType }
+
     type ArticleLink =
         { Title: string
           Description: string
@@ -149,7 +160,8 @@ module Models =
 
     and RenderableArticleImage =
         { Name: string
-          PreviewName: string
+          Extension: string
+          PreviewUrl: string option
           Thanks: string }
 
     and RenderableArticlePart = { Title: string; TitleSlug: string }
@@ -169,7 +181,8 @@ module Models =
 
     and RenderableSeriesIndexImage =
         { Name: string
-          PreviewName: string
+          Extension: string
+          PreviewUrl: string option
           Thanks: string }
 
     and RenderableSeriesIndexArticlePart =
