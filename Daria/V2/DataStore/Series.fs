@@ -34,8 +34,7 @@ module Series =
               Version: int
               DraftVersion: int option
               Hash: string
-              Active: bool
-              Draft: bool }
+              Active: bool }
 
             static member SelectSql() =
                 "SELECT id, version, draft_version, hash, active FROM series_versions"
