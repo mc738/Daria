@@ -1,2 +1,6 @@
-﻿module Daria.V2.DataStore.Templates
+﻿namespace Daria.V2.DataStore
+
+module Templates =
+    
+    ()
 
