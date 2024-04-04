@@ -115,15 +115,15 @@ module Common =
         
         member b.TryGetHash() =
             match b with
-            | Blob.Prepared(stream, hash) -> hash
+            | Blob.Prepared(stream, hash) -> hash |> Ok
             | Blob.Stream stream ->
-                // NOTE this is a bit wasteful but
-                use ms = new MemoryStream()
-                stream.CopyTo(ms)
-                // Attempt to reset the stream. If this is not possible then 
-                if stream.CanSeek then stream.Position <- 0L else failwith "Stream is not seekable."
-                
-                ms.GetSHA256Hash()
+                match stream.CanSeek with
+                | true ->
+                     use ms = new MemoryStream()
+                     stream.CopyTo(ms)
+                     stream.Position <- 0L
+                     ms.GetSHA256Hash() |> Ok
+                | false -> Error "Stream is not seekable"
             | Blob.Text s -> s.GetSHA256Hash() |> Ok
             | Blob.Bytes bytes -> Hashing.generateHash (SHA256.Create()) bytes |> Ok
             
