@@ -10,6 +10,7 @@
         <Compile Include="Old.fs" />
         <Compile Include="Common\Options.fs" />
         <Compile Include="Actions\ImportAction.fs" />
+        <Compile Include="Actions\BuildAction.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 
