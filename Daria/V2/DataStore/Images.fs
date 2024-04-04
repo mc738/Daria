@@ -35,7 +35,13 @@ module Images =
         // First check if the version exists (or what the latest version is)
         
         match Internal.fetchLatestVersion ctx newVersion.ImageId with
-        | Some lv -> ()
+        | Some lv ->
+            // Check if either the main or preview blob has changed and
+            lv.
+            
+            
+            
+            ()
         | None -> ()
         
         
