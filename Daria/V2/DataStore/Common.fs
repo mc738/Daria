@@ -2,8 +2,11 @@
 
 open System
 open System.IO
+open System.Security.Cryptography
 open Freql.Sqlite
+open FsToolbox.Core
 open FsToolbox.Extensions.Strings
+open FsToolbox.Extensions.Streams
 
 #nowarn "100001"
 
@@ -108,7 +111,46 @@ module Common =
         | Stream of Stream
         | Text of string
         | Bytes of Byte array
+        
+        
+        member b.TryGetHash() =
+            match b with
+            | Blob.Prepared(stream, hash) -> hash
+            | Blob.Stream stream ->
+                // NOTE this is a bit wasteful but
+                use ms = new MemoryStream()
+                stream.CopyTo(ms)
+                // Attempt to reset the stream. If this is not possible then 
+                if stream.CanSeek then stream.Position <- 0L else failwith "Stream is not seekable."
+                
+                ms.GetSHA256Hash()
+            | Blob.Text s -> s.GetSHA256Hash() |> Ok
+            | Blob.Bytes bytes -> Hashing.generateHash (SHA256.Create()) bytes |> Ok
+            
+        
+        /// <summary>
+        /// Get the hash of the blob.
+        /// Be warned, if the blob is Blob.Stream and the related stream is not seekable this will fail.
+        /// This is because generating the hash will advance the stream position and it can not be reset.
+        /// </summary>
+        [<CompilerMessage("Method can have fail, have undeterministic results or cause corruption and should only be used for internal use.", 100002)>]
+        member b.GetHash() =
+            match b with
+            | Blob.Prepared(stream, hash) -> hash
+            | Blob.Stream stream ->
+                // NOTE this is a bit wasteful but
+                use ms = new MemoryStream()
+                stream.CopyTo(ms)
+                // Attempt to reset the stream. If this is not possible then 
+                if stream.CanSeek then stream.Position <- 0L else failwith "Stream is not seekable."
+                
+                ms.GetSHA256Hash()
+            | Blob.Text s -> s.GetSHA256Hash()
+            | Blob.Bytes bytes -> Hashing.generateHash (SHA256.Create()) bytes
 
+    
+    
+    
     [<CompilerMessage("Type should only be used for internal use", 100001)>]
     type EntityVersion =
         | Specific of Id: string * Version: int
