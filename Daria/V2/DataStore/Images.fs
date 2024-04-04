@@ -37,8 +37,8 @@ module Images =
         match Internal.fetchLatestVersion ctx newVersion.ImageId with
         | Some lv ->
             // Check if either the main or preview blob has changed and
-            lv.
-            
+            let prevResourceHash = Resources.getVersionHash ctx lv.ResourceVersionId
+            let prevPreviewResourceHash = lv.PreviewResourceVersionId |> Option.bind (Resources.getVersionHash ctx) 
             
             
             ()
