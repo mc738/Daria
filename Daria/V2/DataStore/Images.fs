@@ -40,6 +40,8 @@ module Images =
             let prevResourceHash = Resources.getVersionHash ctx lv.ResourceVersionId
             let prevPreviewResourceHash = lv.PreviewResourceVersionId |> Option.bind (Resources.getVersionHash ctx) 
             
+            newVersion.ResourceVersion.ResourceBlob.TryGetHash()
+            
             
             ()
         | None -> ()
