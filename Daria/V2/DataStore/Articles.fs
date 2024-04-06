@@ -375,8 +375,8 @@ module Articles =
                     | RelatedEntityVersion.Specified id -> Some id
                     | RelatedEntityVersion.Lookup version ->
                         match version with
-                        | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
-                        | Latest id -> Images.Internal.getLatestVersion ctx id
+                        | Specific(id, version) -> Images.Internal.fetchSpecificVersion ctx id version
+                        | Latest id -> Images.Internal.fetchLatestVersion ctx id
                         |> Option.map (fun i -> i.Id)
                     | RelatedEntityVersion.Bespoke fn -> fn ctx)
 
@@ -461,8 +461,8 @@ module Articles =
                     | RelatedEntityVersion.Specified id -> Some id
                     | RelatedEntityVersion.Lookup version ->
                         match version with
-                        | Specific(id, version) -> Images.Internal.getSpecificVersion ctx id version
-                        | Latest id -> Images.Internal.getLatestVersion ctx id
+                        | Specific(id, version) -> Images.Internal.fetchSpecificVersion ctx id version
+                        | Latest id -> Images.Internal.fetchLatestVersion ctx id
                         |> Option.map (fun i -> i.Id)
                     | RelatedEntityVersion.Bespoke fn -> fn ctx)
 
