@@ -1,6 +1,7 @@
 ﻿namespace Daria.V2.DataStore
 
 open Daria.V2.DataStore.Common
+open Daria.V2.DataStore.Models
 
 module Images =
 
@@ -33,6 +34,21 @@ module Images =
         Operations.selectImageVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
         |> Option.isSome
 
+    let exists (ctx: SqliteContext) (id: string) =
+        Operations.selectImageRecord ctx [ "WHERE id = @0" ] [ id ] |> Option.isSome
+
+    let add (ctx: SqliteContext) (newImage: NewImage) =
+        let id = newImage.Id.ToString()
+
+        match exists ctx id |> not with
+        | true ->
+            ({ Id = id; Name = newImage.Name }: Parameters.NewImage)
+            |> Operations.insertImage ctx
+
+            AddResult.Success id
+        | false -> AddResult.AlreadyExists id
+
+    
     let addVersion (ctx: SqliteContext) (newVersion: NewImageVersion) =
 
         let id = newVersion.Id.ToString()
@@ -82,6 +98,26 @@ module Images =
                 let resourceVersionId =
                     match ``optional string has changed`` prevResourceHash rvh with
                     | true ->
+                        match Resources.exists ctx newVersion.ResourceVersion.ResourceId with
+                        | true -> ()
+                        | false ->
+                            match
+                                Resources.add
+                                    ctx
+                                    { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
+                                      Name = newVersion.ResourceVersion.ResourceId }
+                            with
+                            | AddResult.Success id -> ()
+                            | AddResult.NoChange id -> ()
+                            | AddResult.AlreadyExists id -> ()
+                            | AddResult.MissingRelatedEntity(entityType, id) ->
+                                // TODO handle
+                                failwith "todo"
+                            | AddResult.Failure(message, ``exception``) ->
+                                // TODO handle
+                                failwith "todo"
+
+
                         match newVersion.ResourceVersion |> Resources.addVersion ctx false with
                         | AddResult.Success id -> id
                         | AddResult.NoChange id -> id
@@ -99,6 +135,22 @@ module Images =
                     | true ->
                         newVersion.PreviewResourceVersion
                         |> Option.map (fun nv ->
+                            match
+                                Resources.add
+                                    ctx
+                                    { Id = IdType.Specific nv.ResourceId
+                                      Name = nv.ResourceId }
+                            with
+                            | AddResult.Success id -> ()
+                            | AddResult.NoChange id -> ()
+                            | AddResult.AlreadyExists id -> ()
+                            | AddResult.MissingRelatedEntity(entityType, id) ->
+                                // TODO handle
+                                failwith "todo"
+                            | AddResult.Failure(message, ``exception``) ->
+                                // TODO handle
+                                failwith "todo"
+
                             match Resources.addVersion ctx false nv with
                             | AddResult.Success id -> id
                             | AddResult.NoChange id -> id
@@ -125,6 +177,22 @@ module Images =
                 AddResult.Success id
             | false -> AddResult.NoChange lv.Id
         | false, None ->
+            
+            match
+                Resources.add
+                    ctx
+                    { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
+                      Name = newVersion.ResourceVersion.ResourceId }
+            with
+            | AddResult.Success id -> ()
+            | AddResult.NoChange id -> ()
+            | AddResult.AlreadyExists id -> ()
+            | AddResult.MissingRelatedEntity(entityType, id) ->
+                // TODO handle
+                failwith "todo"
+            | AddResult.Failure(message, ``exception``) ->
+                // TODO handle
+                failwith "todo"
 
             let resourceVersionId =
                 match newVersion.ResourceVersion |> Resources.addVersion ctx false with
@@ -141,6 +209,22 @@ module Images =
             let previewResourceVersionId =
                 newVersion.PreviewResourceVersion
                 |> Option.map (fun nv ->
+                    match
+                        Resources.add
+                            ctx
+                            { Id = IdType.Specific nv.ResourceId
+                              Name = nv.ResourceId }
+                    with
+                    | AddResult.Success id -> ()
+                    | AddResult.NoChange id -> ()
+                    | AddResult.AlreadyExists id -> ()
+                    | AddResult.MissingRelatedEntity(entityType, id) ->
+                        // TODO handle
+                        failwith "todo"
+                    | AddResult.Failure(message, ``exception``) ->
+                        // TODO handle
+                        failwith "todo"
+                    
                     match Resources.addVersion ctx false nv with
                     | AddResult.Success id -> id
                     | AddResult.NoChange id -> id
