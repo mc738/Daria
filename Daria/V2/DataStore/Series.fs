@@ -389,7 +389,7 @@ module Series =
                 | None -> pv.Version + 1, 1, Some pv.Hash
             | None -> 1, 1, None
 
-        match exists ctx newVersion.SeriesId, versionExists ctx id |> not, force || compareHashes prevHash hash with
+        match exists ctx newVersion.SeriesId, versionExists ctx id |> not, force || ``hash has changed`` prevHash hash with
         | true, true, true ->
             let ivi =
                 newVersion.ImageVersion
@@ -475,7 +475,7 @@ module Series =
                 | None -> pv.Version + 1, Some pv.Hash
             | None -> 1, None
 
-        match exists ctx newVersion.SeriesId, versionExists ctx id |> not, force || compareHashes prevHash hash with
+        match exists ctx newVersion.SeriesId, versionExists ctx id |> not, force || ``hash has changed`` prevHash hash with
         | true, true, true ->
             let ivi =
                 newVersion.ImageVersion
