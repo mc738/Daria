@@ -187,8 +187,12 @@ module Common =
         |> String
         |> fun s -> s.ToSnakeCase()
 
-    let compareHashes (strA: string option) (strB: string) =
+    let ``hash has changed`` (strA: string option) (strB: string) =
         match strA with
         | Some s when s.Equals(strB, StringComparison.OrdinalIgnoreCase) |> not -> true
         | Some _ -> false
         | None -> true
+
+    let compareOptionHashes (strA: string option) (strB: string option) =
+        match strA, strB with
+        | Some s1, Some s2 when s1.Equals(s2,  StringComparison.OrdinalIgnoreCase) |> not -> true
