@@ -367,7 +367,7 @@ module Articles =
                 | None -> pv.Version + 1, 1, Some pv.Hash
             | None -> 1, 1, None
 
-        match versionExists ctx id |> not, force || compareHashes prevHash hash with
+        match versionExists ctx id |> not, force || ``hash has changed`` prevHash hash with
         | true, true ->
             let ivi =
                 newVersion.ImageVersion
@@ -453,7 +453,7 @@ module Articles =
                 | None -> pv.Version + 1, Some pv.Hash
             | None -> 1, None
 
-        match versionExists ctx id |> not, force || compareHashes prevHash hash with
+        match versionExists ctx id |> not, force || ``hash has changed`` prevHash hash with
         | true, true ->
             let ivi =
                 newVersion.ImageVersion
