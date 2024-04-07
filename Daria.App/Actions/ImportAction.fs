@@ -3,6 +3,7 @@
 open Daria.App.Common.Options
 open Daria.V2.DataStore.Common
 open Daria.V2.Operations
+open Daria.V2.Operations.Import
 
 module ImportAction =
 
@@ -10,15 +11,15 @@ module ImportAction =
 
     let run (options: ImportOptions) =
 
-        match Import.run options.SettingsPath with
+        match run options.SettingsPath with
         | Ok results ->
             match options.Verbose with
             | true ->
-                let rec output (success: int) (skipped: int) (indent: int) (r: Import.ImportDirectoryResult) =
+                let rec output (success: int) (skipped: int) (indent: int) (r: ImportDirectoryResult) =
                     let indentStr = System.String(' ', indent)
 
                     match r with
-                    | Import.Success importDirectorySuccessResult ->
+                    | Success importDirectorySuccessResult ->
                         printfn $"{indentStr}Success: {importDirectorySuccessResult.Path}"
 
                         importDirectorySuccessResult.Results
@@ -38,7 +39,7 @@ module ImportAction =
                             |> List.unzip
 
                         (success + 1, skipped)
-                    | Import.Skipped(path, reason) ->
+                    | Skipped(path, reason) ->
                         printfn $"{indentStr}Skipped ({reason}): {path}"
                         (success, skipped + 1)
 
