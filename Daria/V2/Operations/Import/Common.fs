@@ -132,5 +132,3 @@ module Common =
             | None -> headerContent, None
         | None -> None, None
     
-    ()
-
