@@ -170,9 +170,12 @@ module Models =
 
     and RenderableArticleImage =
         { Name: string
+          Version: int
           Extension: string
           PreviewUrl: string option
           Thanks: string }
+        
+        member rai.GetName() = ``create image version name`` rai.Name rai.Version rai.Extension
 
     and RenderableArticlePart = { Title: string; TitleSlug: string }
 
@@ -191,9 +194,12 @@ module Models =
 
     and RenderableSeriesIndexImage =
         { Name: string
+          Version: int
           Extension: string
           PreviewUrl: string option
           Thanks: string }
+        
+        member rsi.GetName() = ``create image version name`` rsi.Name rsi.Version rsi.Extension
 
     and RenderableSeriesIndexArticlePart =
         { Title: string
