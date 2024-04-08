@@ -111,29 +111,30 @@ module Common =
         | Stream of Stream
         | Text of string
         | Bytes of Byte array
-        
-        
+
+
         member b.TryGetHash() =
             match b with
             | Blob.Prepared(stream, hash) -> hash |> Ok
             | Blob.Stream stream ->
                 match stream.CanSeek with
                 | true ->
-                     use ms = new MemoryStream()
-                     stream.CopyTo(ms)
-                     stream.Position <- 0L
-                     ms.GetSHA256Hash() |> Ok
+                    use ms = new MemoryStream()
+                    stream.CopyTo(ms)
+                    stream.Position <- 0L
+                    ms.GetSHA256Hash() |> Ok
                 | false -> Error "Stream is not seekable"
             | Blob.Text s -> s.GetSHA256Hash() |> Ok
             | Blob.Bytes bytes -> Hashing.generateHash (SHA256.Create()) bytes |> Ok
-            
-        
+
+
         /// <summary>
         /// Get the hash of the blob.
         /// Be warned, if the blob is Blob.Stream and the related stream is not seekable this will fail.
         /// This is because generating the hash will advance the stream position and it can not be reset.
         /// </summary>
-        [<CompilerMessage("Method can have fail, have undeterministic results or cause corruption and should only be used for internal use.", 100002)>]
+        [<CompilerMessage("Method can have fail, have undeterministic results or cause corruption and should only be used for internal use.",
+                          100002)>]
         member b.GetHash() =
             match b with
             | Blob.Prepared(stream, hash) -> hash
@@ -141,16 +142,19 @@ module Common =
                 // NOTE this is a bit wasteful but
                 use ms = new MemoryStream()
                 stream.CopyTo(ms)
-                // Attempt to reset the stream. If this is not possible then 
-                if stream.CanSeek then stream.Position <- 0L else failwith "Stream is not seekable."
-                
+                // Attempt to reset the stream. If this is not possible then
+                if stream.CanSeek then
+                    stream.Position <- 0L
+                else
+                    failwith "Stream is not seekable."
+
                 ms.GetSHA256Hash()
             | Blob.Text s -> s.GetSHA256Hash()
             | Blob.Bytes bytes -> Hashing.generateHash (SHA256.Create()) bytes
 
-    
-    
-    
+
+
+
     [<CompilerMessage("Type should only be used for internal use", 100001)>]
     type EntityVersion =
         | Specific of Id: string * Version: int
@@ -195,14 +199,16 @@ module Common =
 
     let ``optional string has changed`` (strA: string option) (strB: string option) =
         match strA, strB with
-        | Some s1, Some s2 when s1.Equals(s2,  StringComparison.OrdinalIgnoreCase) |> not -> true
+        | Some s1, Some s2 when s1.Equals(s2, StringComparison.OrdinalIgnoreCase) |> not -> true
         | Some _, None
         | None, Some _ -> true
         | Some _, Some _
         | None, None -> false
-     
-    let deconstructInto<'T1, 'T2, 'R> (fn: 'T1 -> 'T2 -> 'R)  (a: 'T1, b: 'T2) = fn a b 
-       
+
+    let deconstructInto<'T1, 'T2, 'R> (fn: 'T1 -> 'T2 -> 'R) (a: 'T1, b: 'T2) = fn a b
+
     let ``optional strings have changed`` (values: (string option * string option) list) =
-        values  |> List.exists (deconstructInto ``optional string has changed``)
-        
+        values |> List.exists (deconstructInto ``optional string has changed``)
+
+    let ``create image version name`` (name: string) (version: int) (extension: string) =
+        $"{name}_v{version}{extension}"
