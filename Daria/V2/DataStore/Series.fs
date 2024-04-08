@@ -228,6 +228,7 @@ module Series =
                          |> Option.map (fun rv -> ir, iv, rv))
                      |> Option.map (fun (ir, iv, rv) ->
                          ({ Name = ir.Name
+                            Version = iv.Version
                             Extension = FileType.GetFileExtensionFromString rv.FileType 
                             Thanks = iv.ThanksHtml |> Option.defaultValue ""
                             PreviewUrl = iv.PreviewUrl }
