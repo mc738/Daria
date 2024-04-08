@@ -106,6 +106,14 @@ module Domain =
             FileType.Deserialize fileType |> Option.defaultValue FileType.Binary
             |> fun r -> r.GetExtension()
         
+        static member FromExtension(extension: string, ?defaultType: FileType) =
+            let ext =
+                if extension.StartsWith '.' then extension.Substring(1) else extension 
+            
+            FileType.Deserialize ext
+            |> Option.orElse defaultType
+            |> Option.defaultValue FileType.Binary
+            
         static member TryDeserialize(str: string) =
             match str.ToLower() with
             | "bin"
