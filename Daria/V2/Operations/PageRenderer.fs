@@ -160,11 +160,11 @@ module PageRenderer =
           "gh_issue_link", Mustache.Value.Scalar <| createIssueLink article.Title
           match article.Image with
           | Some rai ->
-              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rai.Name}{rai.Extension}"
+              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rai.GetName()}"
 
               "preview_image",
               rai.PreviewUrl
-              |> Option.defaultValue $"{localUrlPrefix}/img/{rai.Name}{rai.Extension}"
+              |> Option.defaultValue $"{localUrlPrefix}/img/{rai.GetName()}"
               |> Mustache.Value.Scalar
 
               "thanks", Mustache.Value.Scalar rai.Thanks
@@ -251,11 +251,11 @@ module PageRenderer =
 
           match series.Image with
           | Some rsi ->
-              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rsi.Name}{rsi.Extension}"
+              "image", Mustache.Value.Scalar $"{localUrlPrefix}/img/{rsi.GetName()}"
 
               "preview_image",
               rsi.PreviewUrl
-              |> Option.defaultValue $"{localUrlPrefix}/img/{rsi.Name}{rsi.Extension}"
+              |> Option.defaultValue $"{localUrlPrefix}/img/{rsi.GetName()}"
               |> Mustache.Value.Scalar
 
               "thanks", Mustache.Value.Scalar rsi.Thanks
