@@ -20,7 +20,6 @@ module Resources =
           ThanksName: string option
           PreviewUrl: string option }
 
-
         static member TryDeserialize(json: JsonElement) =
             match Json.tryGetStringProperty "directory" json, Json.tryGetStringProperty "imageName" json with
             | Some d, Some i ->
@@ -36,6 +35,18 @@ module Resources =
 
     type ResourceManifest =
         { Images: ImageManifestItem list }
+
+
+        static member TryLoad(path: string) =
+            match File.Exists path with
+            | true ->
+                try
+                    (File.ReadAllText path |> JsonDocument.Parse).RootElement
+                    |> ResourceManifest.TryDeserialize
+                with exn ->
+                    Error $"Unhandled error while deserializing manifest. Error: {exn.Message}"
+            | false -> Error $"File `{path}` does not exist"
+
 
         static member TryDeserialize(json: JsonElement) =
             match
@@ -108,5 +119,8 @@ module Resources =
 
 
     let importResources (path: string) =
+
+
+
 
         ()
