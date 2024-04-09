@@ -37,7 +37,6 @@ module Resources =
     type ResourceManifest =
         { Images: ImageManifestItem list }
 
-
         static member TryDeserialize(json: JsonElement) =
             match
                 Json.tryGetArrayProperty "images" json
