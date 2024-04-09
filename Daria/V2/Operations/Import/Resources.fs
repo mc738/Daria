@@ -36,7 +36,6 @@ module Resources =
     type ResourceManifest =
         { Images: ImageManifestItem list }
 
-
         static member TryLoad(path: string) =
             match File.Exists path with
             | true ->
@@ -46,7 +45,6 @@ module Resources =
                 with exn ->
                     Error $"Unhandled error while deserializing manifest. Error: {exn.Message}"
             | false -> Error $"File `{path}` does not exist"
-
 
         static member TryDeserialize(json: JsonElement) =
             match
