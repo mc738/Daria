@@ -35,14 +35,27 @@ module Resources =
             | _, None -> Error "Missing `imageName` property"
 
     type ResourceManifest =
-        {
-            Images: ImageManifestItem list
-        }
-        
-        
+        { Images: ImageManifestItem list }
+
+
         static member TryDeserialize(json: JsonElement) =
-            ()
-    
+            match
+                Json.tryGetArrayProperty "images" json
+                |> Option.map (List.map ImageManifestItem.TryDeserialize)
+            with
+            | Some imgs ->
+                { Images =
+                    imgs
+                    |> List.fold
+                        (fun acc r ->
+                            match r with
+                            | Ok img -> img :: acc
+                            | Error _ -> acc)
+                        []
+                    |> List.rev }
+                |> Ok
+            | None -> Ok { Images = [] }
+
     let tryCreateResourceVersion (path: string) =
         match File.Exists path with
         | true ->
@@ -96,5 +109,5 @@ module Resources =
 
 
     let importResources (path: string) =
-        
+
         ()
