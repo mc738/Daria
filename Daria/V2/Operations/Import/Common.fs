@@ -2,7 +2,7 @@
 
 [<AutoOpen>]
 module Common =
-    
+
     open System.IO
     open System.Text.RegularExpressions
     open System.Text.Json
@@ -11,7 +11,7 @@ module Common =
     open FDOM.Core.Parsing.BlockParser
     open Daria.V2.DataStore
     open Daria.V2.DataStore.Common
-    
+
     type Settings =
         { StorePath: string
           ArticlesRoot: string
@@ -77,6 +77,8 @@ module Common =
           Results: ImportResult list
           ChildrenResults: ImportDirectoryResult list }
 
+    and ImportResourcesResult = { ImageResultS: ImportResult list }
+
     [<RequireQualifiedAccess>]
     module TokenExtractor =
 
@@ -131,4 +133,3 @@ module Common =
                 | _ -> None
             | None -> headerContent, None
         | None -> None, None
-    
