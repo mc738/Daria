@@ -34,6 +34,15 @@ module Resources =
             | None, _ -> Error "Missing `directory` property"
             | _, None -> Error "Missing `imageName` property"
 
+    type ResourceManifest =
+        {
+            Images: ImageManifestItem list
+        }
+        
+        
+        static member TryDeserialize(json: JsonElement) =
+            ()
+    
     let tryCreateResourceVersion (path: string) =
         match File.Exists path with
         | true ->
@@ -55,26 +64,17 @@ module Resources =
 
         let dirPath = Path.Combine(rootPath, item.Directory)
 
-
         let imagePath = Path.Combine(dirPath, item.ImageName)
-
-        let extension = Path.GetExtension(imagePath)
-        let name = Path.GetFileNameWithoutExtension(imagePath)
-
 
         match tryCreateResourceVersion imagePath with
         | Some nrv ->
-            let previewImagePath = 
-            
             let result =
                 ({ Id = IdType.Generated
-                   ImageId = name
-                   ResourceVersion =
-                     nrv
+                   ImageId = item.ImageName
+                   ResourceVersion = nrv
                    PreviewResourceVersion =
-                       item.PreviewImageName
-                       
-                       
+                     item.PreviewImageName
+                     |> Option.bind (fun pin -> Path.Combine(dirPath, pin) |> tryCreateResourceVersion)
                    Url = ""
                    PreviewUrl = item.PreviewUrl
                    ThanksHtml =
@@ -93,3 +93,8 @@ module Resources =
             ({ Path = imagePath
                Result = AddResult.Failure($"File `{imagePath}` not found", None) }
             : ImportResult)
+
+
+    let importResources (path: string) =
+        
+        ()
