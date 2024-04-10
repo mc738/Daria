@@ -79,6 +79,12 @@ module Common =
     
     and ImportResourcesResult = { ImageResults: ImportResult list }
     
+    and ImportActionResults =
+        {
+            Directories: ImportDirectoryResult list
+            Resources: ImportResourcesResult list
+        }
+    
     [<RequireQualifiedAccess>]
     module TokenExtractor =
 
