@@ -76,8 +76,10 @@ module Common =
           IndexResult: AddResult
           Results: ImportResult list
           ChildrenResults: ImportDirectoryResult list }
-
-    and ImportResourcesResult = { ImageResultS: ImportResult list }
+    
+    and ImportResourcesResult = { ImageResults: ImportResult list }
+    
+    
 
     [<RequireQualifiedAccess>]
     module TokenExtractor =
