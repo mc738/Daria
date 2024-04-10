@@ -44,8 +44,11 @@ module ImportAction =
                         (success, skipped + 1)
 
                 let (success, skipped) =
-                    results.Directories |> List.map (output 0 0 0) |> List.unzip
-                
+                    results.Directories
+                    |> List.map (output 0 0 0)
+                    |> List.unzip
+                    |> fun (success, skipped) -> List.sum success, List.sum skipped
+
                 printfn $"Success: {success} Skipped: {skipped}"
             | false ->
                 failwith "Non-verbose mode not implemented yet."
