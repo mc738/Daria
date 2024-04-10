@@ -43,7 +43,7 @@ module ImportAction =
                         printfn $"{indentStr}Skipped ({reason}): {path}"
                         (success, skipped + 1)
 
-                let (success, skipped) = output 0 0 0 results
+                let (success, skipped) = output 0 0 0 results.Directories
                 
                 printfn $"Success: {success} Skipped: {skipped}"
             | false ->
