@@ -114,13 +114,20 @@ module Impl =
                     settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
                 |> List.ofSeq
                 |> List.map (scanDirectory ctx settings None)
-                
-            ({ Path = settings.ArticlesRoot
-               IndexResult = AddResult.Success ""
-               Results = []
-               ChildrenResults = directoryResults }
-            : ImportDirectorySuccessResult)
-            |> ImportDirectoryResult.Success)
+             
+            {
+                Directories =
+                    Directory.EnumerateDirectories(settings.ArticlesRoot)
+                    |> Seq.filter (fun di ->
+                        let dn = DirectoryInfo(di).Name
+                        settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
+                    |> List.ofSeq
+                    |> List.map (scanDirectory ctx settings None)
+                Resources = [] 
+            })
+    
+    
+        
     
     ()
 
