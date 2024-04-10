@@ -43,7 +43,8 @@ module ImportAction =
                         printfn $"{indentStr}Skipped ({reason}): {path}"
                         (success, skipped + 1)
 
-                let (success, skipped) = output 0 0 0 results.Directories
+                let (success, skipped) =
+                    results.Directories |> List.map (output 0 0 0) |> List.unzip
                 
                 printfn $"Success: {success} Skipped: {skipped}"
             | false ->
