@@ -121,5 +121,4 @@ module Resources =
         | Ok rm ->
             ({ ImageResults = rm.Images |> List.map (importImage ctx path) }: ImportResourcesSuccessResult)
             |> ImportResourcesResult.Success
-        | Error e ->
-            ImportResourcesResult.Failure (e, None)
+        | Error e -> ImportResourcesResult.Failure(e, None)
