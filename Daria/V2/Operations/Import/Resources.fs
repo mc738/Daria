@@ -120,8 +120,8 @@ module Resources =
 
         match ResourceManifest.TryLoad <| Path.Combine(path, "manifest.json") with
         | Ok rm ->
-            ({ ImageResults = rm.Images |> List.map (importImage ctx path) }: ImportResourcesResult)
-
+            ({ ImageResults = rm.Images |> List.map (importImage ctx path) }: ImportResourcesSuccessResult)
+            |> ImportResourcesResult.Success
         | Error e ->
 
 
