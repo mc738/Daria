@@ -6,12 +6,12 @@ module Impl =
     open System
     open System.IO
     open FDOM.Core.Parsing
-    open Freql.Sqlite    
+    open Freql.Sqlite
     open Daria.V2.DataStore
     open Daria.V2.DataStore.Common
     open Daria.V2.Operations.Import.Articles
     open Daria.V2.Operations.Import.Series
-    
+
     let rec scanDirectory (ctx: SqliteContext) (settings: Settings) (parentId: string option) (path: string) =
         // First look for an index file.
         let indexPath = Path.Combine(path, settings.IndexFileName)
@@ -44,6 +44,7 @@ module Impl =
                         Directory.EnumerateFiles(path)
                         |> Seq.filter (fun fi ->
                             let fn = Path.GetFileName(fi)
+
                             fn.Equals(settings.IndexFileName) |> not
                             && settings.FileIgnorePatterns |> List.exists (fun ip -> ip.IsMatch fn) |> not)
                         |> List.ofSeq
@@ -106,20 +107,12 @@ module Impl =
                     use ctx = SqliteContext.Create settings.StorePath
                     Initialization.run ctx
                     ctx
-             
-            {
-                Directories =
-                    Directory.EnumerateDirectories(settings.ArticlesRoot)
-                    |> Seq.filter (fun di ->
-                        let dn = DirectoryInfo(di).Name
-                        settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
-                    |> List.ofSeq
-                    |> List.map (scanDirectory ctx settings None)
-                Resources = [] 
-            })
-    
-    
-        
-    
-    ()
 
+            { Directories =
+                Directory.EnumerateDirectories(settings.ArticlesRoot)
+                |> Seq.filter (fun di ->
+                    let dn = DirectoryInfo(di).Name
+                    settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
+                |> List.ofSeq
+                |> List.map (scanDirectory ctx settings None)
+              Resources = Resources.importResources ctx settings.ResourcesRoot })
