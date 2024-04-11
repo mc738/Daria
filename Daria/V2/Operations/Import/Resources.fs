@@ -115,7 +115,6 @@ module Resources =
                Result = AddResult.Failure($"File `{imagePath}` not found", None) }
             : ImportResult)
 
-
     let importResources (ctx: SqliteContext) (path: string) =
         match ResourceManifest.TryLoad <| Path.Combine(path, "manifest.json") with
         | Ok rm ->
