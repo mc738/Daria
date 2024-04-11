@@ -106,14 +106,6 @@ module Impl =
                     use ctx = SqliteContext.Create settings.StorePath
                     Initialization.run ctx
                     ctx
-
-            let directoryResults =
-                Directory.EnumerateDirectories(settings.ArticlesRoot)
-                |> Seq.filter (fun di ->
-                    let dn = DirectoryInfo(di).Name
-                    settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
-                |> List.ofSeq
-                |> List.map (scanDirectory ctx settings None)
              
             {
                 Directories =
