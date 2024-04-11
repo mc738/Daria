@@ -1,5 +1,7 @@
 ﻿namespace Daria.V2.Operations.Import
 
+open System
+
 [<AutoOpen>]
 module Common =
 
@@ -67,7 +69,7 @@ module Common =
 
     type ImportResult = { Path: string; Result: AddResult }
 
-    type ImportDirectoryResult =
+    type [<RequireQualifiedAccess>] ImportDirectoryResult =
         | Success of ImportDirectorySuccessResult
         | Skipped of Path: string * Reason: string
 
@@ -77,11 +79,15 @@ module Common =
           Results: ImportResult list
           ChildrenResults: ImportDirectoryResult list }
 
-    and ImportResourcesResult = { ImageResults: ImportResult list }
+    and [<RequireQualifiedAccess>] ImportResourcesResult =
+        | Success of ImportResourcesSuccessResult
+        | Failure of Message: string * Exception: exn option
+    
+    and ImportResourcesSuccessResult = { ImageResults: ImportResult list }
 
     and ImportActionResults =
         { Directories: ImportDirectoryResult list
-          Resources: ImportResourcesResult list }
+          Resources: ImportResourcesResult }
 
     [<RequireQualifiedAccess>]
     module TokenExtractor =
