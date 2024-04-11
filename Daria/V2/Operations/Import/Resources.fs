@@ -117,17 +117,9 @@ module Resources =
 
 
     let importResources (ctx: SqliteContext) (path: string) =
-
         match ResourceManifest.TryLoad <| Path.Combine(path, "manifest.json") with
         | Ok rm ->
             ({ ImageResults = rm.Images |> List.map (importImage ctx path) }: ImportResourcesSuccessResult)
             |> ImportResourcesResult.Success
         | Error e ->
-
-
-            ()
-
-
-
-
-        ()
+            ImportResourcesResult.Failure (e, None)
