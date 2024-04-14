@@ -1,6 +1,7 @@
 ﻿namespace Daria.V2.DataStore
 
 #nowarn "100001"
+
 module Models =
 
     open System
@@ -134,7 +135,7 @@ module Models =
           CompressionType: CompressionType }
 
     type NewImage = { Id: IdType; Name: string }
-    
+
     type NewImageVersion =
         { Id: IdType
           ImageId: string
@@ -143,6 +144,18 @@ module Models =
           Url: string
           PreviewUrl: string option
           ThanksHtml: string option }
+
+
+    type ExportImageListItem =
+        { Id: string
+          Name: string
+          Versions: ExportImageVersionListItem list }
+
+    and ExportImageVersionListItem =
+        { Id: string
+          Version: int
+          ResourceVersionId: string
+          PreviewResourceVersionId: string option }
 
     type ArticleLink =
         { Title: string
@@ -174,8 +187,9 @@ module Models =
           Extension: string
           PreviewUrl: string option
           Thanks: string }
-        
-        member rai.GetName() = ``create image version name`` rai.Name rai.Version rai.Extension
+
+        member rai.GetName() =
+            ``create image version name`` rai.Name rai.Version rai.Extension
 
     and RenderableArticlePart = { Title: string; TitleSlug: string }
 
@@ -198,8 +212,9 @@ module Models =
           Extension: string
           PreviewUrl: string option
           Thanks: string }
-        
-        member rsi.GetName() = ``create image version name`` rsi.Name rsi.Version rsi.Extension
+
+        member rsi.GetName() =
+            ``create image version name`` rsi.Name rsi.Version rsi.Extension
 
     and RenderableSeriesIndexArticlePart =
         { Title: string
