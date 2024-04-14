@@ -23,6 +23,12 @@ module Images =
                 [ "WHERE image_id = @0"; "ORDER BY version DESC"; "LIMIT 1" ]
                 [ imageId ]
 
+        let all (ctx: SqliteContext) = Operations.selectImageRecords ctx [] []
+
+
+        let allVersionsForImageId (ctx: SqliteContext) (imageId: string) =
+            Operations.selectImageVersionRecords ctx [ "WHERE image_id = @0" ] [ imageId ]
+
     let getLatestVersion (ctx: SqliteContext) (imageId: string) =
 
 
@@ -48,7 +54,7 @@ module Images =
             AddResult.Success id
         | false -> AddResult.AlreadyExists id
 
-    
+
     let addVersion (ctx: SqliteContext) (newVersion: NewImageVersion) =
 
         let id = newVersion.Id.ToString()
@@ -177,7 +183,7 @@ module Images =
                 AddResult.Success id
             | false -> AddResult.NoChange lv.Id
         | false, None ->
-            
+
             match
                 Resources.add
                     ctx
@@ -224,7 +230,7 @@ module Images =
                     | AddResult.Failure(message, ``exception``) ->
                         // TODO handle
                         failwith "todo"
-                    
+
                     match Resources.addVersion ctx false nv with
                     | AddResult.Success id -> id
                     | AddResult.NoChange id -> id
@@ -248,3 +254,18 @@ module Images =
             |> Operations.insertImageVersion ctx
 
             AddResult.Success id
+
+    let fetchExportImageList (ctx: SqliteContext) =
+        Internal.all ctx
+        |> List.map (fun i ->
+            ({ Id = i.Id
+               Name = i.Name
+               Versions =
+                 Internal.allVersionsForImageId ctx i.Id
+                 |> List.map (fun iv ->
+                     ({ Id = iv.Id
+                        Version = iv.Version
+                        ResourceVersionId = iv.ResourceVersionId
+                        PreviewResourceVersionId = iv.PreviewResourceVersionId }
+                     : ExportImageVersionListItem)) }
+            : ExportImageListItem))
