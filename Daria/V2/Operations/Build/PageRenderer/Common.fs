@@ -1,9 +1,9 @@
 ﻿namespace Daria.V2.Operations.Build.PageRenderer
 
-open Fluff.Core
-
 [<AutoOpen>]
 module Common =
+        
+    open Fluff.Core
     
     type ShareLinkType =
         | Facebook
