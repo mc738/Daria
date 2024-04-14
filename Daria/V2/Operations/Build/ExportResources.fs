@@ -1,5 +1,6 @@
 ﻿namespace Daria.V2.Operations.Build
 
+open System.IO
 open Microsoft.FSharp.Core
 
 module ExportResources =
@@ -11,6 +12,10 @@ module ExportResources =
 
     let exportImages (ctx: SqliteContext) (rootPath: string) =
 
+        let imgPath = Path.Combine(rootPath, "img")
+
+        Directory.CreateDirectory(imgPath) |> ignore
+
         Images.fetchExportImageList ctx
         |> List.iter (fun ili ->
             ili.Versions
@@ -19,7 +24,7 @@ module ExportResources =
                 |> Option.iter (fun rve ->
                     File.WriteAllBytes(
                         Path.Combine(
-                            rootPath,
+                            imgPath,
                             ``create image version name`` ili.Name ilv.Version (rve.FileType.GetExtension())
                         ),
                         rve.Blob
@@ -30,14 +35,8 @@ module ExportResources =
                 |> Option.iter (fun rve ->
                     File.WriteAllBytes(
                         Path.Combine(
-                            rootPath,
+                            imgPath,
                             ``create image version name`` ili.Name ilv.Version (rve.FileType.GetExtension())
                         ),
                         rve.Blob
-                    )))
-
-
-
-
-
-            ())
+                    ))))
