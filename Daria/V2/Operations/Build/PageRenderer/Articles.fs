@@ -1,15 +1,17 @@
 ﻿namespace Daria.V2.Operations.Build.PageRenderer
 
-open System
-open System.Text.Encodings.Web
-open Daria.V2.DataStore.Models
-open FDOM.Core.Common
-open FDOM.Core.Parsing
-open Fluff.Core
-open Freql.Sqlite
-
 module Articles =
-    
+
+    open System
+    open System.IO
+    open System.Text.Encodings.Web
+    open FDOM.Core.Common
+    open FDOM.Core.Parsing
+    open FDOM.Rendering
+    open Fluff.Core
+    open Freql.Sqlite
+    open Daria.V2.DataStore.Models
+        
     let createPartData (part: RenderableArticlePart) =
         [ "part_title", Mustache.Value.Scalar part.Title
           "part_url", Mustache.Value.Scalar $"./{part.TitleSlug}.html" ]
