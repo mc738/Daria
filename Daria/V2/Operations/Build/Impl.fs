@@ -32,6 +32,7 @@ module Impl =
 
         Index.renderIndex ctx indexTemplate rootPath
 
+        ExportResources.exportImages ctx rootPath
     
     ()
 
