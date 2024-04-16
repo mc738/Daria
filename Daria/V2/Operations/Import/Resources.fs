@@ -89,27 +89,42 @@ module Resources =
 
         match tryCreateResourceVersion imagePath with
         | Some nrv ->
-            let result =
-                ({ Id = IdType.Generated
-                   ImageId = item.ImageName
-                   ResourceVersion = nrv
-                   PreviewResourceVersion =
-                     item.PreviewImageName
-                     |> Option.bind (fun pin -> Path.Combine(dirPath, pin) |> tryCreateResourceVersion)
-                   Url = ""
-                   PreviewUrl = item.PreviewUrl
-                   ThanksHtml =
-                     item.ThanksName
-                     |> Option.bind (fun tn ->
-                         let tnp = Path.Combine(dirPath, tn)
+            let imageId = Path.GetFileNameWithoutExtension(item.ImageName)
 
-                         match File.Exists tnp with
-                         | true -> File.ReadAllText tnp |> Some
-                         | false -> None) }
-                : NewImageVersion)
-                |> Images.addVersion ctx
+            match
+                Images.add
+                    ctx
+                    ({ Id = IdType.Specific imageId
+                       Name = item.ImageName })
+            with
+            | AddResult.Success imageId
+            | AddResult.NoChange imageId
+            | AddResult.AlreadyExists imageId ->
+                let result =
+                    ({ Id = IdType.Generated
+                       ImageId = imageId
+                       ResourceVersion = nrv
+                       PreviewResourceVersion =
+                         item.PreviewImageName
+                         |> Option.bind (fun pin -> Path.Combine(dirPath, pin) |> tryCreateResourceVersion)
+                       Url = ""
+                       PreviewUrl = item.PreviewUrl
+                       ThanksHtml =
+                         item.ThanksName
+                         |> Option.bind (fun tn ->
+                             let tnp = Path.Combine(dirPath, tn)
 
-            ({ Path = imagePath; Result = result }: ImportResult)
+                             match File.Exists tnp with
+                             | true -> File.ReadAllText tnp |> Some
+                             | false -> None) }
+                    : NewImageVersion)
+                    |> Images.addVersion ctx
+
+                ({ Path = imagePath; Result = result }: ImportResult)
+            | AddResult.MissingRelatedEntity(entityType, id) as result ->
+                ({ Path = imagePath; Result = result }: ImportResult)
+            | AddResult.Failure(message, ``exception``) as result ->
+                ({ Path = imagePath; Result = result }: ImportResult)
         | None ->
             ({ Path = imagePath
                Result = AddResult.Failure($"File `{imagePath}` not found", None) }
