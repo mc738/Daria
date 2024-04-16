@@ -63,6 +63,7 @@ module Domain =
         | Wav
         // Images
         | Gif
+        | Jpg
         | Jpeg
         | Png
         | Tiff
@@ -91,6 +92,7 @@ module Domain =
               FileType.RealAudio
               FileType.Wav
               FileType.Gif
+              FileType.Jpg
               FileType.Jpeg
               FileType.Png
               FileType.Tiff
@@ -133,6 +135,7 @@ module Domain =
             | "realaudio" -> Ok FileType.RealAudio
             | "wav" -> Ok FileType.Wav
             | "gif" -> Ok FileType.Gif
+            | "jpg" -> Ok FileType.Jpg
             | "jpeg" -> Ok FileType.Jpeg
             | "png" -> Ok FileType.Png
             | "tiff" -> Ok FileType.Tiff
@@ -166,6 +169,7 @@ module Domain =
             | RealAudio -> "realaudio"
             | Wav -> "wav"
             | Gif -> "gif"
+            | Jpg -> "jpg"
             | Jpeg -> "jpeg"
             | Png -> "png"
             | Tiff -> "tiff"
@@ -193,6 +197,7 @@ module Domain =
             | RealAudio -> "ra"
             | Wav -> ".wav"
             | Gif -> ".gif"
+            | Jpg -> ".jpg"
             | Jpeg -> ".jpeg"
             | Png -> ".png"
             | Tiff -> ".tiff"
@@ -220,6 +225,7 @@ module Domain =
             | RealAudio -> "audio/vnd.rn-realaudio"
             | Wav -> "audio/x-wav"
             | Gif -> "image/gif"
+            | Jpg -> "image/jpg"
             | Jpeg -> "image/jpeg"
             | Png -> "image/png"
             | Tiff -> "image/tiff"
