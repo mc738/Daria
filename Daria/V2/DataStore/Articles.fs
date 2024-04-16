@@ -21,7 +21,7 @@ module Articles =
     open Daria.V2.DataStore.Common
     open Daria.V2.DataStore.Models
 
-    module private Internal =
+    module Internal =
 
         /// <summary>
         /// An internal record representing a article version.
