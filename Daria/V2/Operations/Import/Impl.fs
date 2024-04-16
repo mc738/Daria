@@ -108,6 +108,9 @@ module Impl =
                     Initialization.run ctx
                     ctx
 
+            // Resources need to be imported before series/articles to make sure images are added.
+            let resources = Resources.importResources ctx settings.ResourcesRoot
+            
             { Directories =
                 Directory.EnumerateDirectories(settings.ArticlesRoot)
                 |> Seq.filter (fun di ->
@@ -115,4 +118,4 @@ module Impl =
                     settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
                 |> List.ofSeq
                 |> List.map (scanDirectory ctx settings None)
-              Resources = Resources.importResources ctx settings.ResourcesRoot })
+              Resources = resources })
