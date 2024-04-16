@@ -1,5 +1,7 @@
 ﻿namespace Daria.V2.Operations.Build.PageRenderer
 
+open Daria.V2.DataStore.Models
+
 [<AutoOpen>]
 module Common =
         
