@@ -61,7 +61,7 @@ module Initialization =
           Records.Resource.CreateTableSql()
           Records.ResourceVersion.CreateTableSql()
           Records.Image.CreateTableSql()
-          Records.ImagineVersion.CreateTableSql()
+          Records.ImageVersion.CreateTableSql()
           Records.Template.CreateTableSql()
           Records.TemplateVersion.CreateTableSql()
           Records.Artifact.CreateTableSql()
