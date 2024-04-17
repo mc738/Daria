@@ -4,8 +4,11 @@
 #nowarn "100001"
 
 open System
+open Daria.V2.Common.Domain
 open Daria.V2.DataStore.Common
 open Freql.Core.Common.Types
+open FsToolbox.Core
+open Microsoft.FSharp.Core
 
 [<RequireQualifiedAccess>]
 module Resources =
@@ -27,7 +30,7 @@ module Resources =
               Hash: string }
 
             static member SelectSql() =
-                "SELECT id, version, hash FROM article_versions"
+                "SELECT id, version, hash FROM resource_versions"
 
         let fetchLatestVersion (ctx: SqliteContext) (resourceId: string) =
             Operations.selectResourceVersionRecord
@@ -127,3 +130,23 @@ module Resources =
     let getVersionHash (ctx: SqliteContext) (resourceVersionId: string) =
         Internal.fetchVersionListingById ctx resourceVersionId
         |> Option.map (fun rv -> rv.Hash)
+
+
+    let getExportVersion (ctx: SqliteContext) (versionId: string) =
+        Operations.selectResourceVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
+        |> Option.map (fun rv ->
+            ({ Id = rv.Id
+               ResourceId = rv.ResourceId
+               Version = rv.Version
+               Blob = rv.RawBlob.ToBytes()
+               Hash = rv.Hash
+               FileType = rv.FileType |> FileType.Deserialize |> Option.defaultValue FileType.Binary
+               EncryptionType =
+                 rv.EncryptionType
+                 |> EncryptionType.Deserialize
+                 |> Option.defaultValue EncryptionType.None
+               CompressionType =
+                 rv.CompressionType
+                 |> CompressionType.Deserialize
+                 |> Option.defaultValue CompressionType.None }
+            : ExportResourceVersion))
