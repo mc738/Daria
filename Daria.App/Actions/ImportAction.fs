@@ -19,7 +19,7 @@ module ImportAction =
                     let indentStr = System.String(' ', indent)
 
                     match r with
-                    | Success importDirectorySuccessResult ->
+                    | ImportDirectoryResult.Success importDirectorySuccessResult ->
                         printfn $"{indentStr}Success: {importDirectorySuccessResult.Path}"
 
                         importDirectorySuccessResult.Results
@@ -39,7 +39,7 @@ module ImportAction =
                             |> List.unzip
 
                         (success + 1, skipped)
-                    | Skipped(path, reason) ->
+                    | ImportDirectoryResult.Skipped(path, reason) ->
                         printfn $"{indentStr}Skipped ({reason}): {path}"
                         (success, skipped + 1)
 
