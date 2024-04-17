@@ -95,7 +95,7 @@ module Resources =
                 Images.add
                     ctx
                     ({ Id = IdType.Specific imageId
-                       Name = item.ImageName })
+                       Name = imageId })
             with
             | AddResult.Success imageId
             | AddResult.NoChange imageId
