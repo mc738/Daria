@@ -2,6 +2,8 @@
 
 #nowarn "100001"
 
+open Daria.V2.Common.Domain
+
 module Models =
 
     open System
@@ -130,6 +132,16 @@ module Models =
           ResourceId: string
           ResourceBlob: Blob
           CreatedOn: DateTime option
+          FileType: FileType
+          EncryptionType: EncryptionType
+          CompressionType: CompressionType }
+
+    type ExportResourceVersion =
+        { Id: string
+          ResourceId: string
+          Version: int
+          Blob: byte array
+          Hash: string
           FileType: FileType
           EncryptionType: EncryptionType
           CompressionType: CompressionType }
