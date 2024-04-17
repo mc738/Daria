@@ -23,12 +23,13 @@ module Series =
     open Daria.V2.DataStore.Common
     open Daria.V2.DataStore.Models
 
-    module private Internal =
+    module Internal =
 
         /// <summary>
         /// An internal record representing a series version.
         /// This contains the minimum data required for internal operations.
         /// </summary>
+        
         type SeriesVersionListingItem =
             { Id: string
               Version: int
