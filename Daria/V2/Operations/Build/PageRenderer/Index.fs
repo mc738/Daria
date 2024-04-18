@@ -71,7 +71,7 @@ module Index =
           |> Mustache.Value.Scalar
 
           match article.Image with
-          | Some pi -> "post_image", Mustache.Value.Scalar $"./img/{pi.Name}"
+          | Some pi -> "post_image", Mustache.Value.Scalar $"./img/{pi.GetName()}"
           | None -> ()
 
           match Articles.createArticleLinkParts ctx article.VersionId with
