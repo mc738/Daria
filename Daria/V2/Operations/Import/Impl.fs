@@ -1,5 +1,7 @@
 ﻿namespace Daria.V2.Operations.Import
 
+open Daria.V2.Operations.Common
+
 [<AutoOpen>]
 module Impl =
 
@@ -98,24 +100,25 @@ module Impl =
         | false -> ImportDirectoryResult.Skipped("", $"Missing `{settings.IndexFileName}` file.")
 
     let run (settingsPath: string) =
-        Settings.Load settingsPath
+        OperationSettings.Load settingsPath
         |> Result.map (fun settings ->
             use ctx =
-                match File.Exists settings.StorePath with
-                | true -> SqliteContext.Open settings.StorePath
+                match File.Exists settings.Common.StorePath with
+                | true -> SqliteContext.Open settings.Common.StorePath
                 | false ->
-                    use ctx = SqliteContext.Create settings.StorePath
+                    use ctx = SqliteContext.Create settings.Common.StorePath
                     Initialization.run ctx
                     ctx
-
+            
             // Resources need to be imported before series/articles to make sure images are added.
-            let resources = Resources.importResources ctx settings.ResourcesRoot
+            let resources = Resources.importResources ctx settings.Import
+            StoreSettings.import ctx settings.Import
             
             { Directories =
-                Directory.EnumerateDirectories(settings.ArticlesRoot)
+                Directory.EnumerateDirectories(settings.Import.ArticlesRoot)
                 |> Seq.filter (fun di ->
                     let dn = DirectoryInfo(di).Name
-                    settings.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
+                    settings.Import.DirectoryIgnorePatterns |> List.exists (fun ip -> ip.IsMatch dn) |> not)
                 |> List.ofSeq
-                |> List.map (scanDirectory ctx settings None)
+                |> List.map (scanDirectory ctx settings.Import None)
               Resources = resources })
