@@ -1,12 +1,14 @@
 ﻿namespace Daria.V2.Operations.Common
 
-open System.IO
-open System.Text.Json
-open System.Text.RegularExpressions
-open FsToolbox.Core
 
 [<AutoOpen>]
 module Settings =
+
+    open System.IO
+    open System.Text.Json
+    open System.Text.RegularExpressions
+    open FsToolbox.Core
+    open Daria.V2.Common
 
     type OperationSettings =
         { Common: CommonSettings
@@ -77,7 +79,11 @@ module Settings =
                     |> Option.bind Json.tryGetStringArray
                     |> Option.defaultValue [ "u"; "yyyy-MM-dd" ]
                   IndexFileName = Json.tryGetStringProperty "indexFileName" json |> Option.defaultValue "index.md"
-                  StoreSettings = [] }
+                  StoreSettings =
+                    Json.tryGetArrayProperty "storeSettings" json
+                    |> Option.defaultValue []
+                    |> List.map StoreSetting.TryFromJson
+                    |> resultChoose }
                 |> Ok
             | None, _ -> Error "Missing `articlesRoot` property"
             | _, None -> Error "Missing `resourcesRoot` property"
