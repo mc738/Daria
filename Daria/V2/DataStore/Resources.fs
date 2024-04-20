@@ -69,7 +69,7 @@ module Resources =
 
         match exists ctx id |> not with
         | true ->
-            ({ Id = id; Name = newResource.Name }: Parameters.NewResource)
+            ({ Id = id; Name = newResource.Name; Bucket = newResource.Bucket }: Parameters.NewResource)
             |> Operations.insertResource ctx
 
             AddResult.Success id
