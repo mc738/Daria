@@ -125,7 +125,7 @@ module Models =
           EncryptionType: EncryptionType
           CompressionType: CompressionType }
 
-    type NewResource = { Id: IdType; Name: string }
+    type NewResource = { Id: IdType; Name: string; Bucket: string }
 
     type NewResourceVersion =
         { Id: IdType
