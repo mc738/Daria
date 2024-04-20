@@ -5,7 +5,7 @@ open System.Text.Json.Serialization
 open Freql.Core.Common
 open Freql.Sqlite
 
-/// Module generated on 02/04/2024 17:45:25 (utc) via Freql.Tools.
+/// Module generated on 20/04/2024 12:14:06 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Records =
     /// A record representing a row in the table `article_version_links`.
@@ -541,16 +541,18 @@ module Records =
     /// A record representing a row in the table `resources`.
     type Resource =
         { [<JsonPropertyName("id")>] Id: string
-          [<JsonPropertyName("name")>] Name: string }
+          [<JsonPropertyName("name")>] Name: string
+          [<JsonPropertyName("bucket")>] Bucket: string }
     
         static member Blank() =
             { Id = String.Empty
-              Name = String.Empty }
+              Name = String.Empty
+              Bucket = String.Empty }
     
         static member CreateTableSql() = """
         CREATE TABLE resources (
 	id TEXT NOT NULL,
-	name TEXT NOT NULL,
+	name TEXT NOT NULL, bucket TEXT NOT NULL,
 	CONSTRAINT resources_PK PRIMARY KEY (id)
 )
         """
@@ -558,7 +560,8 @@ module Records =
         static member SelectSql() = """
         SELECT
               resources.`id`,
-              resources.`name`
+              resources.`name`,
+              resources.`bucket`
         FROM resources
         """
     
@@ -849,7 +852,7 @@ module Records =
         static member TableName() = "templates"
     
 
-/// Module generated on 02/04/2024 17:45:25 (utc) via Freql.Tools.
+/// Module generated on 20/04/2024 12:14:06 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Parameters =
     /// A record representing a new row in the table `article_version_links`.
@@ -1069,11 +1072,13 @@ module Parameters =
     /// A record representing a new row in the table `resources`.
     type NewResource =
         { [<JsonPropertyName("id")>] Id: string
-          [<JsonPropertyName("name")>] Name: string }
+          [<JsonPropertyName("name")>] Name: string
+          [<JsonPropertyName("bucket")>] Bucket: string }
     
         static member Blank() =
             { Id = String.Empty
-              Name = String.Empty }
+              Name = String.Empty
+              Bucket = String.Empty }
     
     
     /// A record representing a new row in the table `series`.
@@ -1190,7 +1195,7 @@ module Parameters =
               CreatedOn = DateTime.UtcNow }
     
     
-/// Module generated on 02/04/2024 17:45:25 (utc) via Freql.Tools.
+/// Module generated on 20/04/2024 12:14:06 (utc) via Freql.Tools.
 [<RequireQualifiedAccess>]
 module Operations =
 
