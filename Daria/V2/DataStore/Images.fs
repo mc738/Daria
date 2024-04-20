@@ -1,5 +1,6 @@
 ﻿namespace Daria.V2.DataStore
 
+open Daria.V2.Common
 open Daria.V2.DataStore.Common
 open Daria.V2.DataStore.Models
 
@@ -111,7 +112,8 @@ module Images =
                                 Resources.add
                                     ctx
                                     { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
-                                      Name = newVersion.ResourceVersion.ResourceId }
+                                      Name = newVersion.ResourceVersion.ResourceId
+                                      Bucket = ResourceBuckets.images }
                             with
                             | AddResult.Success id -> ()
                             | AddResult.NoChange id -> ()
@@ -145,7 +147,8 @@ module Images =
                                 Resources.add
                                     ctx
                                     { Id = IdType.Specific nv.ResourceId
-                                      Name = nv.ResourceId }
+                                      Name = nv.ResourceId
+                                      Bucket = ResourceBuckets.images }
                             with
                             | AddResult.Success id -> ()
                             | AddResult.NoChange id -> ()
@@ -188,7 +191,8 @@ module Images =
                 Resources.add
                     ctx
                     { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
-                      Name = newVersion.ResourceVersion.ResourceId }
+                      Name = newVersion.ResourceVersion.ResourceId
+                      Bucket = ResourceBuckets.images }
             with
             | AddResult.Success id -> ()
             | AddResult.NoChange id -> ()
@@ -219,7 +223,8 @@ module Images =
                         Resources.add
                             ctx
                             { Id = IdType.Specific nv.ResourceId
-                              Name = nv.ResourceId }
+                              Name = nv.ResourceId
+                              Bucket = ResourceBuckets.images }
                     with
                     | AddResult.Success id -> ()
                     | AddResult.NoChange id -> ()
