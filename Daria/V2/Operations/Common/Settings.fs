@@ -14,7 +14,8 @@ module Settings =
 
     type OperationSettings =
         { Common: CommonSettings
-          Import: ImportSettings }
+          Import: ImportSettings
+          Build: BuildSettings }
 
         static member Load(path: string) =
             try
@@ -33,11 +34,19 @@ module Settings =
                 |> Option.defaultValue (Error "Missing `common` property"),
                 Json.tryGetProperty "import" json
                 |> Option.map ImportSettings.TryFromJson
-                |> Option.defaultValue (Error "Missing `import` property")
+                |> Option.defaultValue (Error "Missing `import` property"),
+                Json.tryGetProperty "build" json
+                |> Option.map BuildSettings.TryFromJson
+                |> Option.defaultValue (Error "Missing `build` property")
             with
-            | Ok cs, Ok imp -> { Common = cs; Import = imp } |> Ok
-            | Error e, _
-            | _, Error e -> Error e
+            | Ok cs, Ok imp, Ok bs ->
+                { Common = cs
+                  Import = imp
+                  Build = bs }
+                |> Ok
+            | Error e, _, _
+            | _, Error e, _
+            | _, _, Error e -> Error e
 
     and CommonSettings =
         { StorePath: string }
@@ -100,7 +109,17 @@ module Settings =
             | None, _ -> Error "Missing `key` property"
             | _, None -> Error "Missing `value` property"
 
-    and BuildSettings = { Profiles: BuildProfileSettings list }
+    and BuildSettings =
+        { Profiles: BuildProfileSettings list }
+
+        static member TryFromJson(json: JsonElement) =
+            match
+                Json.tryGetArrayProperty "profiles" json
+                |> Option.map (List.map BuildProfileSettings.TryFromJson >> resultCollect)
+                |> Option.defaultValue (Ok [])
+            with
+            | Ok p -> { Profiles = p } |> Ok
+            | Error e -> Error e
 
     and BuildProfileSettings =
         { Name: string
