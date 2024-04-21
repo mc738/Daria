@@ -2,6 +2,8 @@
 
 #nowarn "100001"
 
+open Daria.V2.Operations.Common
+
 module Series =
     
     open Freql.Sqlite
@@ -11,7 +13,7 @@ module Series =
         
     let addSeries
         (ctx: SqliteContext)
-        (settings: Settings)
+        (settings: ImportSettings)
         (metadata: Map<string, string>)
         (parentId: string option)
         (directoryName: string)
@@ -37,7 +39,7 @@ module Series =
 
     let addSeriesVersion
         (ctx: SqliteContext)
-        (settings: Settings)
+        (settings: ImportSettings)
         (metadata: Map<string, string>)
         (seriesId: string)
         (directoryName: string)
