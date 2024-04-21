@@ -1,5 +1,7 @@
 ﻿namespace Daria.V2.Operations.Common
 
+open Daria.V2.DataStore.Common
+
 
 [<AutoOpen>]
 module Settings =
@@ -97,3 +99,99 @@ module Settings =
             | Some k, Some v -> Ok { Key = k; Value = v }
             | None, _ -> Error "Missing `key` property"
             | _, None -> Error "Missing `value` property"
+
+    and BuildSettings = { Profiles: BuildProfileSettings list }
+
+    and BuildProfileSettings =
+        { Name: string
+          RootPath: string
+          ClearDirectoryBeforeBuild: bool
+          ArticlesTemplateSource: BuildTemplateSource
+          SeriesTemplateSource: BuildTemplateSource
+          IndexTemplateSource: BuildTemplateSource
+          PreBuildSteps: BuildStep list
+          PostBuildSteps: BuildStep list }
+
+    and BuildTemplate = { Name: string }
+
+    and [<RequireQualifiedAccess>] BuildTemplateSource =
+        | Store of Id: string * Version: ItemVersion
+        | File of Path: string
+
+        static member TryFromJson(json: JsonElement) =
+            match Json.tryGetStringProperty "type" json with
+            | Some "store" ->
+                match Json.tryGetStringProperty "id" json with
+                | Some id ->
+                    let version =
+                        match Json.tryGetStringProperty "versionType" json with
+                        | Some "specific" ->
+                            match Json.tryGetIntProperty "version" json with
+                            | Some v -> ItemVersion.Specific v
+                            | None -> ItemVersion.Latest
+                        | Some "latest"
+                        | Some _
+                        | None -> ItemVersion.Latest
+
+                    BuildTemplateSource.Store(id, version) |> Ok
+                | None -> Error "Missing `id` property"
+            | Some "file" ->
+                match Json.tryGetStringProperty "path" json with
+                | Some p -> BuildTemplateSource.File p |> Ok
+                | None -> Error "Missing `path` property"
+            | Some t -> Error $"Unknown template source type `{json}`"
+            | None -> Error $"Missing `type` property"
+
+    and [<RequireQualifiedAccess>] ItemVersion =
+        | Latest
+        | Specific of Version: int
+
+    and BuildStep =
+        | CreateDirectory of CreateDirectoryStep
+        | CopyFile of CopyFilePath
+        | ExportImages of ExportImagesStep
+        | ExportResourceBucket of ExportResourceBucketItem
+        | CreateArtifact
+        | UploadArtifact
+
+        static member TryFromJson(json: JsonElement) =
+            match Json.tryGetStringProperty "type" json with
+            | Some "create-directory" -> Ok()
+            | Some "copy-file" -> Ok()
+            | Some "export-images" -> Ok()
+            | Some "export-resource-bucket" -> Ok()
+            | Some "create-artifact" -> Ok()
+            | Some "upload-artifact" -> Ok()
+            | Some t -> Error $"Unknown build step type `{t}`"
+            | None -> Error "Missing `type` property"
+
+    and CreateDirectoryStep =
+        { Name: string }
+        
+        static member TryFromJson(json: JsonElement) =
+            match Json.tryGetStringProperty "name" json with
+            | Some n -> { Name = n } |> Ok
+            | None -> Error "Missing `name` property"
+
+    and CopyFilePath =
+        { Path: string
+          OutputDirectoryName: string }
+        
+        static member TryFromJson(json: JsonElement) =
+            match
+                Json.tryGetStringProperty "path" json,
+                Json.tryGetStringProperty "outputDirectoryName" json
+            with
+            | Some p, Some odn -> { Name = n } |> Ok
+            | None, _ -> Error "Missing `path` property"
+            | _, None -> Error "Missing `out`"
+
+    and ExportImagesStep =
+        { OutputDirectoryName: string
+          SkipIfExists: bool }
+
+    and ExportResourceBucketItem =
+        { BucketName: string
+          OutputDirectoryName: string
+          UseLatestResourceVersion: bool
+          SkipIfExists: bool }
