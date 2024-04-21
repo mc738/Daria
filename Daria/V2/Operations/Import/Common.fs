@@ -14,59 +14,6 @@ module Common =
     open Daria.V2.DataStore
     open Daria.V2.DataStore.Common
 
-    type Settings =
-        { StorePath: string
-          ArticlesRoot: string
-          ResourcesRoot: string
-          DirectoryIgnorePatterns: Regex list
-          FileIgnorePatterns: Regex list
-          DateTimeFormats: string list
-          IndexFileName: string }
-
-        static member Load(path: string) =
-            try
-                match File.Exists path with
-                | true ->
-                    (File.ReadAllText path |> JsonDocument.Parse).RootElement
-                    |> Settings.TryFromJson
-                | false -> Error $"File `{path}` does not exist"
-            with ex ->
-                Error $"Unhandled exception while loading settings: {ex.Message}"
-
-        static member TryFromJson(json: JsonElement) =
-            match
-                Json.tryGetStringProperty "storePath" json,
-                Json.tryGetStringProperty "articlesRoot" json,
-                Json.tryGetStringProperty "resourcesRoot" json
-            with
-            | Some sp, Some ar, Some rr ->
-                { StorePath = sp
-                  ArticlesRoot = ar
-                  ResourcesRoot = rr
-                  DirectoryIgnorePatterns =
-                    Json.tryGetProperty "directoryIgnorePatterns" json
-                    |> Option.bind Json.tryGetStringArray
-                    |> Option.map (fun dip ->
-                        dip
-                        |> List.map (fun s -> Regex(s, RegexOptions.Compiled ||| RegexOptions.Singleline)))
-                    |> Option.defaultValue []
-                  FileIgnorePatterns =
-                    Json.tryGetProperty "fileIgnorePatterns" json
-                    |> Option.bind Json.tryGetStringArray
-                    |> Option.map (fun fip ->
-                        fip
-                        |> List.map (fun s -> Regex(s, RegexOptions.Compiled ||| RegexOptions.Singleline)))
-                    |> Option.defaultValue []
-                  DateTimeFormats =
-                    Json.tryGetProperty "dateTimeFormats" json
-                    |> Option.bind Json.tryGetStringArray
-                    |> Option.defaultValue [ "u"; "yyyy-MM-dd" ]
-                  IndexFileName = Json.tryGetStringProperty "indexFileName" json |> Option.defaultValue "index.md" }
-                |> Ok
-            | None, _, _ -> Error "Missing `storePath` property"
-            | _, None, _ -> Error "Missing `articlesRoot` property"
-            | _, _, None -> Error "Missing `resourcesRoot` property"
-
     type ImportResult = { Path: string; Result: AddResult }
 
     type [<RequireQualifiedAccess>] ImportDirectoryResult =
