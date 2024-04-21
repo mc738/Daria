@@ -112,6 +112,44 @@ module Settings =
           PreBuildSteps: BuildStep list
           PostBuildSteps: BuildStep list }
 
+        static member TryFromJson(json: JsonElement) =
+            match
+                Json.tryGetStringProperty "name" json,
+                Json.tryGetStringProperty "rootPath" json,
+                Json.tryGetProperty "articlesTemplateSource" json
+                |> Option.map BuildTemplateSource.TryFromJson
+                |> Option.defaultValue (Error "Missing `articlesTemplateSource` property"),
+                Json.tryGetProperty "seriesTemplateSource" json
+                |> Option.map BuildTemplateSource.TryFromJson
+                |> Option.defaultValue (Error "Missing `seriesTemplateSource` property"),
+                Json.tryGetProperty "indexTemplateSource" json
+                |> Option.map BuildTemplateSource.TryFromJson
+                |> Option.defaultValue (Error "Missing `indexTemplateSource` property"),
+                Json.tryGetArrayProperty "preBuildSteps" json
+                |> Option.map (List.map BuildStep.TryFromJson >> resultCollect)
+                |> Option.defaultValue (Ok []),
+                Json.tryGetArrayProperty "postBuildSteps" json
+                |> Option.map (List.map BuildStep.TryFromJson >> resultCollect)
+                |> Option.defaultValue (Ok [])
+            with
+            | Some n, Some rp, Ok ats, Ok sts, Ok its, Ok pre, Ok pos ->
+                { Name = n
+                  RootPath = rp
+                  ClearDirectoryBeforeBuild = failwith "todo"
+                  ArticlesTemplateSource = ats
+                  SeriesTemplateSource = sts
+                  IndexTemplateSource = its
+                  PreBuildSteps = pre
+                  PostBuildSteps = pos }
+                |> Ok
+            | None, _, _, _, _, _, _ -> Error "Missing `name` property"
+            | _, None, _, _, _, _, _ -> Error "Missing `rootPath` property"
+            | _, _, Error e, _, _, _, _ -> Error e
+            | _, _, _, Error e, _, _, _ -> Error e
+            | _, _, _, _, Error e, _, _ -> Error e
+            | _, _, _, _, _, Error e, _ -> Error e
+            | _, _, _, _, _, _, Error e -> Error e
+
     and BuildTemplate = { Name: string }
 
     and [<RequireQualifiedAccess>] BuildTemplateSource =
@@ -146,52 +184,77 @@ module Settings =
         | Latest
         | Specific of Version: int
 
-    and BuildStep =
+    and [<RequireQualifiedAccess>] BuildStep =
         | CreateDirectory of CreateDirectoryStep
-        | CopyFile of CopyFilePath
+        | CopyFile of CopyFileStep
         | ExportImages of ExportImagesStep
-        | ExportResourceBucket of ExportResourceBucketItem
+        | ExportResourceBucket of ExportResourceBucketStep
         | CreateArtifact
         | UploadArtifact
 
         static member TryFromJson(json: JsonElement) =
             match Json.tryGetStringProperty "type" json with
-            | Some "create-directory" -> Ok()
-            | Some "copy-file" -> Ok()
-            | Some "export-images" -> Ok()
-            | Some "export-resource-bucket" -> Ok()
-            | Some "create-artifact" -> Ok()
-            | Some "upload-artifact" -> Ok()
+            | Some "create-directory" -> CreateDirectoryStep.TryFromJson json |> Result.map BuildStep.CreateDirectory
+            | Some "copy-file" -> CopyFileStep.TryFromJson json |> Result.map BuildStep.CopyFile
+            | Some "export-images" -> ExportImagesStep.TryFromJson json |> Result.map BuildStep.ExportImages
+            | Some "export-resource-bucket" ->
+                ExportResourceBucketStep.TryFromJson json
+                |> Result.map BuildStep.ExportResourceBucket
+            | Some "create-artifact" -> Ok BuildStep.CreateArtifact
+            | Some "upload-artifact" -> Ok BuildStep.UploadArtifact
             | Some t -> Error $"Unknown build step type `{t}`"
             | None -> Error "Missing `type` property"
 
     and CreateDirectoryStep =
         { Name: string }
-        
+
         static member TryFromJson(json: JsonElement) =
             match Json.tryGetStringProperty "name" json with
             | Some n -> { Name = n } |> Ok
             | None -> Error "Missing `name` property"
 
-    and CopyFilePath =
+    and CopyFileStep =
         { Path: string
-          OutputDirectoryName: string }
-        
+          OutputDirectoryName: string
+          SkipIfExists: bool }
+
         static member TryFromJson(json: JsonElement) =
-            match
-                Json.tryGetStringProperty "path" json,
-                Json.tryGetStringProperty "outputDirectoryName" json
-            with
-            | Some p, Some odn -> { Name = n } |> Ok
+            match Json.tryGetStringProperty "path" json, Json.tryGetStringProperty "outputDirectoryName" json with
+            | Some p, Some odn ->
+                { Path = p
+                  OutputDirectoryName = odn
+                  SkipIfExists = Json.tryGetBoolProperty "skipIfExists" json |> Option.defaultValue true }
+                |> Ok
             | None, _ -> Error "Missing `path` property"
-            | _, None -> Error "Missing `out`"
+            | _, None -> Error "Missing `outputDirectoryName`"
 
     and ExportImagesStep =
         { OutputDirectoryName: string
           SkipIfExists: bool }
 
-    and ExportResourceBucketItem =
+        static member TryFromJson(json: JsonElement) =
+            match Json.tryGetStringProperty "outputDirectoryName" json with
+            | Some odn ->
+                { OutputDirectoryName = odn
+                  SkipIfExists = Json.tryGetBoolProperty "skipIfExists" json |> Option.defaultValue true }
+                |> Ok
+            | None -> Error "Missing `outputDirectoryName` property"
+
+    and ExportResourceBucketStep =
         { BucketName: string
           OutputDirectoryName: string
           UseLatestResourceVersion: bool
           SkipIfExists: bool }
+
+        static member TryFromJson(json: JsonElement) =
+            match Json.tryGetStringProperty "bucketName" json, Json.tryGetStringProperty "outputDirectoryName" json with
+            | Some bn, Some odn ->
+                { BucketName = bn
+                  OutputDirectoryName = odn
+                  UseLatestResourceVersion =
+                    Json.tryGetBoolProperty "useLatestResourceVersion" json
+                    |> Option.defaultValue true
+                  SkipIfExists = Json.tryGetBoolProperty "skipIfExists" json |> Option.defaultValue true }
+                |> Ok
+            | None, _ -> Error "Missing `bucketName` property"
+            | _, None -> Error "Missing `outputDirectoryName` property"
