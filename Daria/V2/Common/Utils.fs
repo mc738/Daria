@@ -5,7 +5,7 @@ open System
 [<AutoOpen>]
 module Utils =
 
-    let resultChoose<'T> (results: Result<'T, _> list) =
+    let resultChoose<'T, 'E> (results: Result<'T, 'E> list) =
         results
         |> List.fold
             (fun acc r ->
