@@ -1,18 +1,18 @@
 ﻿namespace Daria.V2.Operations.Import
 
-open System
-open System.IO
-open System.Text.Json
-open Daria.V2.Common.Domain
-open Daria.V2.DataStore
-open Daria.V2.DataStore.Common
-open Daria.V2.DataStore.Models
-open Daria.V2.Operations.Common
-open Freql.Sqlite
-open FsToolbox.Core
-
 module Resources =
 
+    open System
+    open System.IO
+    open System.Text.Json
+    open Freql.Sqlite
+    open FsToolbox.Core
+    open Daria.V2.Common
+    open Daria.V2.Common.Domain
+    open Daria.V2.DataStore
+    open Daria.V2.DataStore.Common
+    open Daria.V2.DataStore.Models
+    open Daria.V2.Operations.Common
 
     type ImageManifestItem =
         { Directory: string
@@ -34,17 +34,26 @@ module Resources =
             | None, _ -> Error "Missing `directory` property"
             | _, None -> Error "Missing `imageName` property"
 
-    type ResourceManifestItems =
-        {
-            Directory
-        }
-        
+    type ResourceManifestItem =
+        { Directory: string
+          Bucket: string }
+
+        static member TryDeserialize(json: JsonElement) =
+            match Json.tryGetStringProperty "directory" json, Json.tryGetStringProperty "bucket" json with
+            | Some d, Some b -> ({ Directory = d; Bucket = b }: ResourceManifestItem) |> Ok
+            | None, _ -> Error "Missing `directory` property"
+            | _, None -> Error "Missing `bucket` property"
+
     type ExternalTemplateManifestItem =
-        {
-            Path: string
-            Name: string
-        }
-    
+        { Path: string
+          Name: string }
+
+        static member TryDeserialize(json: JsonElement) =
+            match Json.tryGetStringProperty "path" json, Json.tryGetStringProperty "name" json with
+            | Some d, Some b -> ({ Path = d; Name = b }: ExternalTemplateManifestItem) |> Ok
+            | None, _ -> Error "Missing `path` property"
+            | _, None -> Error "Missing `name` property"
+
     type ResourceManifest =
         { Images: ImageManifestItem list }
 
@@ -58,23 +67,14 @@ module Resources =
                     Error $"Unhandled error while deserializing manifest. Error: {exn.Message}"
             | false -> Error $"File `{path}` does not exist"
 
-        static member TryDeserialize(json: JsonElement) =
-            match
+        static member TryDeserialize(json: JsonElement) : Result<ResourceManifest, string> =
+            { Images =
                 Json.tryGetArrayProperty "images" json
-                |> Option.map (List.map ImageManifestItem.TryDeserialize)
-            with
-            | Some imgs ->
-                { Images =
-                    imgs
-                    |> List.fold
-                        (fun acc r ->
-                            match r with
-                            | Ok img -> img :: acc
-                            | Error _ -> acc)
-                        []
-                    |> List.rev }
-                |> Ok
-            | None -> Ok { Images = [] }
+                |> Option.map (List.map ImageManifestItem.TryDeserialize >> resultChoose)
+                |> Option.defaultValue []
+
+            }
+            |> Ok
 
     let tryCreateResourceVersion (path: string) =
         match File.Exists path with
@@ -143,8 +143,12 @@ module Resources =
             : ImportResult)
 
     let importResources (ctx: SqliteContext) (settings: ImportSettings) =
-        match ResourceManifest.TryLoad <| Path.Combine(settings.ResourcesRoot, "manifest.json") with
+        match
+            ResourceManifest.TryLoad
+            <| Path.Combine(settings.ResourcesRoot, "manifest.json")
+        with
         | Ok rm ->
-            ({ ImageResults = rm.Images |> List.map (importImage ctx settings.ResourcesRoot) }: ImportResourcesSuccessResult)
+            ({ ImageResults = rm.Images |> List.map (importImage ctx settings.ResourcesRoot) }
+            : ImportResourcesSuccessResult)
             |> ImportResourcesResult.Success
         | Error e -> ImportResourcesResult.Failure(e, None)
