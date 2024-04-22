@@ -7,6 +7,7 @@ open Daria.V2.Common.Domain
 open Daria.V2.DataStore
 open Daria.V2.DataStore.Common
 open Daria.V2.DataStore.Models
+open Daria.V2.Operations.Common
 open Freql.Sqlite
 open FsToolbox.Core
 
@@ -33,6 +34,17 @@ module Resources =
             | None, _ -> Error "Missing `directory` property"
             | _, None -> Error "Missing `imageName` property"
 
+    type ResourceManifestItems =
+        {
+            Directory
+        }
+        
+    type ExternalTemplateManifestItem =
+        {
+            Path: string
+            Name: string
+        }
+    
     type ResourceManifest =
         { Images: ImageManifestItem list }
 
@@ -130,9 +142,9 @@ module Resources =
                Result = AddResult.Failure($"File `{imagePath}` not found", None) }
             : ImportResult)
 
-    let importResources (ctx: SqliteContext) (path: string) =
-        match ResourceManifest.TryLoad <| Path.Combine(path, "manifest.json") with
+    let importResources (ctx: SqliteContext) (settings: ImportSettings) =
+        match ResourceManifest.TryLoad <| Path.Combine(settings.ResourcesRoot, "manifest.json") with
         | Ok rm ->
-            ({ ImageResults = rm.Images |> List.map (importImage ctx path) }: ImportResourcesSuccessResult)
+            ({ ImageResults = rm.Images |> List.map (importImage ctx settings.ResourcesRoot) }: ImportResourcesSuccessResult)
             |> ImportResourcesResult.Success
         | Error e -> ImportResourcesResult.Failure(e, None)
