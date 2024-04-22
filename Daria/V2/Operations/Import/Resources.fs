@@ -74,8 +74,14 @@ module Resources =
                 Json.tryGetArrayProperty "images" json
                 |> Option.map (List.map ImageManifestItem.TryDeserialize >> resultChoose)
                 |> Option.defaultValue []
-
-            }
+              ResourceBuckets =
+                Json.tryGetArrayProperty "resourceBuckets" json
+                |> Option.map (List.map ResourceBucketManifestItem.TryDeserialize >> resultChoose)
+                |> Option.defaultValue []
+              ExternalTemplates =
+                Json.tryGetArrayProperty "externalTemplates" json
+                |> Option.map (List.map ExternalTemplateManifestItem.TryDeserialize >> resultChoose)
+                |> Option.defaultValue [] }
             |> Ok
 
     let tryCreateResourceVersion (path: string) =
