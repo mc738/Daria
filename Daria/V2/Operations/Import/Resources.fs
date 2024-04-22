@@ -56,7 +56,7 @@ module Resources =
 
     type ResourceManifest =
         { Images: ImageManifestItem list
-          Resource }
+          ResourceBuckets: ResourceBucketManifestItem }
 
         static member TryLoad(path: string) =
             match File.Exists path with
