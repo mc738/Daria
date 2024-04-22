@@ -34,13 +34,13 @@ module Resources =
             | None, _ -> Error "Missing `directory` property"
             | _, None -> Error "Missing `imageName` property"
 
-    type ResourceManifestItem =
+    type ResourceBucketManifestItem =
         { Directory: string
           Bucket: string }
 
         static member TryDeserialize(json: JsonElement) =
             match Json.tryGetStringProperty "directory" json, Json.tryGetStringProperty "bucket" json with
-            | Some d, Some b -> ({ Directory = d; Bucket = b }: ResourceManifestItem) |> Ok
+            | Some d, Some b -> ({ Directory = d; Bucket = b }: ResourceBucketManifestItem) |> Ok
             | None, _ -> Error "Missing `directory` property"
             | _, None -> Error "Missing `bucket` property"
 
@@ -55,7 +55,8 @@ module Resources =
             | _, None -> Error "Missing `name` property"
 
     type ResourceManifest =
-        { Images: ImageManifestItem list }
+        { Images: ImageManifestItem list
+          Resource }
 
         static member TryLoad(path: string) =
             match File.Exists path with
