@@ -1,5 +1,7 @@
 ﻿namespace Daria.V2.Operations.Import
 
+open System.Text.RegularExpressions
+
 module Resources =
 
     open System
@@ -36,11 +38,23 @@ module Resources =
 
     type ResourceBucketManifestItem =
         { Directory: string
-          Bucket: string }
+          Bucket: string
+          IgnorePatterns: Regex list }
 
         static member TryDeserialize(json: JsonElement) =
             match Json.tryGetStringProperty "directory" json, Json.tryGetStringProperty "bucket" json with
-            | Some d, Some b -> ({ Directory = d; Bucket = b }: ResourceBucketManifestItem) |> Ok
+            | Some d, Some b ->
+                ({ Directory = d
+                   Bucket = b
+                   IgnorePatterns =
+                     Json.tryGetProperty "ignorePatterns" json
+                     |> Option.bind Json.tryGetStringArray
+                     |> Option.map (fun ip ->
+                         ip
+                         |> List.map (fun s -> Regex(s, RegexOptions.Compiled ||| RegexOptions.Singleline)))
+                     |> Option.defaultValue [] }
+                : ResourceBucketManifestItem)
+                |> Ok
             | None, _ -> Error "Missing `directory` property"
             | _, None -> Error "Missing `bucket` property"
 
