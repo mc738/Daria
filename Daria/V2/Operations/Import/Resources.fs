@@ -179,9 +179,11 @@ module Resources =
             | AddResult.Success id
             | AddResult.NoChange id
             | AddResult.AlreadyExists id ->
+                tryCreateResourceVersion f
+                |> 
                 
                 
-                ()
+                { Path = f; Result = result }
             | AddResult.MissingRelatedEntity(entityType, id) as result ->
                 { Path = f; Result = result }
                 
