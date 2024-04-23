@@ -30,7 +30,10 @@ module Common =
         | Success of ImportResourcesSuccessResult
         | Failure of Message: string * Exception: exn option
     
-    and ImportResourcesSuccessResult = { ImageResults: ImportResult list }
+    and ImportResourcesSuccessResult = {
+        ImageResults: ImportResult list
+        ResourceBucketResults: ImportResult list
+    }
 
     and ImportActionResults =
         { Directories: ImportDirectoryResult list
