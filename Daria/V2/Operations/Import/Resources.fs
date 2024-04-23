@@ -39,6 +39,7 @@ module Resources =
     type ResourceBucketManifestItem =
         { Directory: string
           Bucket: string
+          Recursive: bool
           IgnorePatterns: Regex list }
 
         static member TryDeserialize(json: JsonElement) =
@@ -46,6 +47,7 @@ module Resources =
             | Some d, Some b ->
                 ({ Directory = d
                    Bucket = b
+                   Recursive = Json.tryGetBoolProperty "recursive" json |> Option.defaultValue false
                    IgnorePatterns =
                      Json.tryGetProperty "ignorePatterns" json
                      |> Option.bind Json.tryGetStringArray
