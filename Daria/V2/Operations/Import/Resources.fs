@@ -170,27 +170,34 @@ module Resources =
     let importResourceBuckets (ctx: SqliteContext) (rootPath: string) (item: ResourceBucketManifestItem) =
         //
         let dirPath = Path.Combine(rootPath, item.Directory)
-        
+
         Directory.EnumerateFiles dirPath
         |> Seq.map (fun f ->
             let name = Path.GetFileNameWithoutExtension f
-            
-            match Resources.add ctx { Id = IdType.Specific name; Name = name; Bucket = item.Bucket } with
-            | AddResult.Success id
-            | AddResult.NoChange id
-            | AddResult.AlreadyExists id ->
-                tryCreateResourceVersion f
-                |> 
-                
-                
-                { Path = f; Result = result }
-            | AddResult.MissingRelatedEntity(entityType, id) as result ->
-                { Path = f; Result = result }
-                
-            | AddResult.Failure(message, ``exception``) as result ->
-                { Path = f; Result = result })
-        
-    
+
+            match tryCreateResourceVersion f with
+            | Some nrv ->
+                match
+                    Resources.add
+                        ctx
+                        { Id = IdType.Specific nrv.ResourceId
+                          Name = nrv.ResourceId
+                          Bucket = item.Bucket }
+                with
+                | AddResult.Success id
+                | AddResult.NoChange id
+                | AddResult.AlreadyExists id ->
+                    { Path = f
+                      Result = Resources.addVersion ctx false nrv }
+                | AddResult.MissingRelatedEntity(entityType, id) as result -> { Path = f; Result = result }
+
+                | AddResult.Failure(message, ``exception``) as result -> { Path = f; Result = result }
+            | None ->
+                ({ Path = f
+                   Result = AddResult.Failure($"File `{f}` not found", None) }
+                : ImportResult))
+
+
     let importResources (ctx: SqliteContext) (settings: ImportSettings) =
         match
             ResourceManifest.TryLoad
