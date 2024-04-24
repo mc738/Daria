@@ -167,11 +167,11 @@ module Resources =
                Result = AddResult.Failure($"File `{imagePath}` not found", None) }
             : ImportResult)
 
-    let importResourceBuckets (ctx: SqliteContext) (rootPath: string) (item: ResourceBucketManifestItem) =
-        let dirPath = Path.Combine(rootPath, item.Directory)
+    let importResourcesFromDirectory (ctx: SqliteContext) (path: string) (bucket: string) =
 
-        Directory.EnumerateFiles dirPath
-        |> Seq.map (fun f ->
+        Directory.EnumerateFiles path
+        |> List.ofSeq
+        |> List.map (fun f ->
             let name = Path.GetFileNameWithoutExtension f
 
             match tryCreateResourceVersion f with
@@ -181,7 +181,7 @@ module Resources =
                         ctx
                         { Id = IdType.Specific nrv.ResourceId
                           Name = nrv.ResourceId
-                          Bucket = item.Bucket }
+                          Bucket = bucket }
                 with
                 | AddResult.Success id
                 | AddResult.NoChange id
@@ -194,8 +194,24 @@ module Resources =
                 ({ Path = f
                    Result = AddResult.Failure($"File `{f}` not found", None) }
                 : ImportResult))
-        
-        
+
+    let rec importResourceBuckets (ctx: SqliteContext) (rootPath: string) (item: ResourceBucketManifestItem) =
+        let dirPath = Path.Combine(rootPath, item.Directory)
+
+        match item.Recursive with
+        | true ->
+            let rec handler (path: string) =
+                [ yield! importResourcesFromDirectory ctx path item.Bucket
+                  yield!
+                      Directory.EnumerateDirectories path
+                      |> List.ofSeq
+                      |> List.map handler
+                      |> List.collect id ]
+            handler dirPath
+        | false -> importResourcesFromDirectory ctx dirPath item.Bucket
+
+
+
 
     let importResources (ctx: SqliteContext) (settings: ImportSettings) =
         match
@@ -206,7 +222,7 @@ module Resources =
             ({ ImageResults = rm.Images |> List.map (importImage ctx settings.ResourcesRoot)
                ResourceBucketResults =
                  rm.ResourceBuckets
-                 |> List.collect (importResourceBuckets ctx settings.ResourcesRoot >> List.ofSeq) }
+                 |> List.collect (importResourceBuckets ctx settings.ResourcesRoot) }
             : ImportResourcesSuccessResult)
             |> ImportResourcesResult.Success
         | Error e -> ImportResourcesResult.Failure(e, None)
