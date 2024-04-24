@@ -168,7 +168,6 @@ module Resources =
             : ImportResult)
 
     let importResourceBuckets (ctx: SqliteContext) (rootPath: string) (item: ResourceBucketManifestItem) =
-        //
         let dirPath = Path.Combine(rootPath, item.Directory)
 
         Directory.EnumerateFiles dirPath
@@ -195,7 +194,8 @@ module Resources =
                 ({ Path = f
                    Result = AddResult.Failure($"File `{f}` not found", None) }
                 : ImportResult))
-
+        
+        
 
     let importResources (ctx: SqliteContext) (settings: ImportSettings) =
         match
