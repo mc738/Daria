@@ -135,7 +135,7 @@ module Templates =
                     ctx
                     { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
                       Name = newVersion.ResourceVersion.ResourceId
-                      Bucket = ResourceBuckets.images }
+                      Bucket = ResourceBuckets.templates }
             with
             | AddResult.Success id -> ()
             | AddResult.NoChange id -> ()
@@ -159,51 +159,16 @@ module Templates =
                     // TODO handle
                     failwith "todo"
 
-            let previewResourceVersionId =
-                newVersion.PreviewResourceVersion
-                |> Option.map (fun nv ->
-                    match
-                        Resources.add
-                            ctx
-                            { Id = IdType.Specific nv.ResourceId
-                              Name = nv.ResourceId
-                              Bucket = ResourceBuckets.images }
-                    with
-                    | AddResult.Success id -> ()
-                    | AddResult.NoChange id -> ()
-                    | AddResult.AlreadyExists id -> ()
-                    | AddResult.MissingRelatedEntity(entityType, id) ->
-                        // TODO handle
-                        failwith "todo"
-                    | AddResult.Failure(message, ``exception``) ->
-                        // TODO handle
-                        failwith "todo"
-
-                    match Resources.addVersion ctx false nv with
-                    | AddResult.Success id -> id
-                    | AddResult.NoChange id -> id
-                    | AddResult.AlreadyExists id -> id
-                    | AddResult.MissingRelatedEntity(entityType, id) ->
-                        // TODO handle
-                        failwith "todo"
-                    | AddResult.Failure(message, ``exception``) ->
-                        // TODO handle
-                        failwith "todo")
-
             ({ Id = id
-               ImageId = newVersion.ImageId
+               TemplateId = newVersion.TemplateId
                Version = 1
-               ResourceVersionId = resourceVersionId
-               PreviewResourceVersionId = previewResourceVersionId
-               Url = newVersion.Url
-               PreviewUrl = newVersion.PreviewUrl
-               ThanksHtml = newVersion.ThanksHtml }
-            : Parameters.NewImageVersion)
-            |> Operations.insertImageVersion ctx
+               ResourceVersionId = resourceVersionId }
+            : Parameters.NewTemplateVersion)
+            |> Operations.insertTemplateVersion ctx
 
             AddResult.Success id
 
-    let fetchExportImageList (ctx: SqliteContext) =
+    let fetchExportTemplateList (ctx: SqliteContext) =
         Internal.all ctx
         |> List.map (fun i ->
             ({ Id = i.Id
