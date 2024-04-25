@@ -1,15 +1,15 @@
 ﻿namespace Daria.V2.DataStore
 
-open System
-open Daria.V2.DataStore.Models
+
 
 module Templates =
 
-    open Daria.V2.DataStore.Models
-    open Daria.V2.DataStore.Persistence
+    open System
+    open FsToolbox.Extensions.Strings
     open Freql.Sqlite
     open Daria.V2.DataStore.Common
-    open FsToolbox.Extensions.Strings
+    open Daria.V2.DataStore.Persistence
+    open Daria.V2.DataStore.Models
 
     module Internal =
 
