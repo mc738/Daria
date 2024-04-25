@@ -4,3 +4,5 @@
 module ResourceBuckets =
 
     let images = "__images"
+    
+    let templates = "__templates"
