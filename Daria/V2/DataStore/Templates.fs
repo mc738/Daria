@@ -1,12 +1,11 @@
 ﻿namespace Daria.V2.DataStore
 
-
-
 module Templates =
 
     open System
     open FsToolbox.Extensions.Strings
     open Freql.Sqlite
+    open Daria.V2.Common
     open Daria.V2.DataStore.Common
     open Daria.V2.DataStore.Persistence
     open Daria.V2.DataStore.Models
@@ -96,7 +95,7 @@ module Templates =
                                 ctx
                                 { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
                                   Name = newVersion.ResourceVersion.ResourceId
-                                  Bucket = ResourceBuckets.images }
+                                  Bucket = ResourceBuckets.templates }
                         with
                         | AddResult.Success id -> ()
                         | AddResult.NoChange id -> ()
@@ -120,50 +119,12 @@ module Templates =
                         // TODO handle
                         failwith "todo"
 
-                let previewResourceVersionId =
-                    match ``optional string has changed`` prevResourceHash rvh with
-                    | true ->
-                        newVersion.PreviewResourceVersion
-                        |> Option.map (fun nv ->
-                            match
-                                Resources.add
-                                    ctx
-                                    { Id = IdType.Specific nv.ResourceId
-                                      Name = nv.ResourceId
-                                      Bucket = ResourceBuckets.images }
-                            with
-                            | AddResult.Success id -> ()
-                            | AddResult.NoChange id -> ()
-                            | AddResult.AlreadyExists id -> ()
-                            | AddResult.MissingRelatedEntity(entityType, id) ->
-                                // TODO handle
-                                failwith "todo"
-                            | AddResult.Failure(message, ``exception``) ->
-                                // TODO handle
-                                failwith "todo"
-
-                            match Resources.addVersion ctx false nv with
-                            | AddResult.Success id -> id
-                            | AddResult.NoChange id -> id
-                            | AddResult.AlreadyExists id -> id
-                            | AddResult.MissingRelatedEntity(entityType, id) ->
-                                // TODO handle
-                                failwith "todo"
-                            | AddResult.Failure(message, ``exception``) ->
-                                // TODO handle
-                                failwith "todo")
-                    | false -> lv.PreviewResourceVersionId
-
                 ({ Id = id
-                   ImageId = newVersion.ImageId
+                   TemplateId = newVersion.TemplateId
                    Version = lv.Version + 1
-                   ResourceVersionId = resourceVersionId
-                   PreviewResourceVersionId = previewResourceVersionId
-                   Url = newVersion.Url
-                   PreviewUrl = newVersion.PreviewUrl
-                   ThanksHtml = newVersion.ThanksHtml }
-                : Parameters.NewImageVersion)
-                |> Operations.insertImageVersion ctx
+                   ResourceVersionId = resourceVersionId }
+                : Parameters.NewTemplateVersion)
+                |> Operations.insertTemplateVersion ctx
 
                 AddResult.Success id
             | false -> AddResult.NoChange lv.Id
