@@ -1,7 +1,10 @@
 ﻿namespace Daria.V2.DataStore
 
+open System
+open Daria.V2.DataStore.Models
+
 module Templates =
-    
+
     open Daria.V2.DataStore.Models
     open Daria.V2.DataStore.Persistence
     open Freql.Sqlite
@@ -10,21 +13,24 @@ module Templates =
 
     module Internal =
 
-
-        let fetchSpecificVersion (ctx: SqliteContext) (imageId: string) (version: int) =
-            Operations.selectImageVersionRecord ctx [ "WHERE image_id = @0 AND version = @1" ] [ imageId; version ]
+        let fetchSpecificVersion (ctx: SqliteContext) (templateId: string) (version: int) =
+            Operations.selectTemplateVersionRecord
+                ctx
+                [ "WHERE template_id = @0 AND version = @1" ]
+                [ templateId; version ]
 
         let fetchLatestVersion (ctx: SqliteContext) (imageId: string) =
-            Operations.selectImageVersionRecord
+            Operations.selectTemplateVersionRecord
                 ctx
-                [ "WHERE image_id = @0"; "ORDER BY version DESC"; "LIMIT 1" ]
+                [ "WHERE template_id = @0"; "ORDER BY version DESC"; "LIMIT 1" ]
                 [ imageId ]
 
-        let all (ctx: SqliteContext) = Operations.selectImageRecords ctx [] []
+        let all (ctx: SqliteContext) =
+            Operations.selectTemplateRecords ctx [] []
 
 
         let allVersionsForImageId (ctx: SqliteContext) (imageId: string) =
-            Operations.selectImageVersionRecords ctx [ "WHERE image_id = @0" ] [ imageId ]
+            Operations.selectTemplateVersionRecords ctx [ "WHERE image_id = @0" ] [ imageId ]
 
     let getLatestVersion (ctx: SqliteContext) (imageId: string) =
 
@@ -34,38 +40,38 @@ module Templates =
 
 
     let versionExists (ctx: SqliteContext) (versionId: string) =
-        Operations.selectImageVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
+        Operations.selectTemplateVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
         |> Option.isSome
 
     let exists (ctx: SqliteContext) (id: string) =
-        Operations.selectImageRecord ctx [ "WHERE id = @0" ] [ id ] |> Option.isSome
+        Operations.selectTemplateRecord ctx [ "WHERE id = @0" ] [ id ] |> Option.isSome
 
-    let add (ctx: SqliteContext) (newImage: NewImage) =
-        let id = newImage.Id.ToString()
+    let add (ctx: SqliteContext) (newTemplate: NewTemplate) =
+        let id = newTemplate.Id.ToString()
 
         match exists ctx id |> not with
         | true ->
-            ({ Id = id; Name = newImage.Name }: Parameters.NewImage)
-            |> Operations.insertImage ctx
+            ({ Id = id
+               Name = newTemplate.Name
+               CreatedOn = DateTime.UtcNow }
+            : Parameters.NewTemplate)
+            |> Operations.insertTemplate ctx
 
             AddResult.Success id
         | false -> AddResult.AlreadyExists id
 
 
-    let addVersion (ctx: SqliteContext) (newVersion: NewImageVersion) =
+    let addVersion (ctx: SqliteContext) (newVersion: NewTemplateVersion) =
 
         let id = newVersion.Id.ToString()
 
         // First check if the version exists (or what the latest version is)
 
-        match versionExists ctx id, Internal.fetchLatestVersion ctx newVersion.ImageId with
+        match versionExists ctx id, Internal.fetchLatestVersion ctx newVersion.TemplateId with
         | true, _ -> AddResult.AlreadyExists id
         | false, Some lv ->
             // Check if either the main or preview blob has changed and
             let prevResourceHash = Resources.getVersionHash ctx lv.ResourceVersionId
-
-            let prevPreviewResourceHash =
-                lv.PreviewResourceVersionId |> Option.bind (Resources.getVersionHash ctx)
 
             // Try and get the resource version hash.
             // If the blob is Blob.Stream and stream is not seekable this will return None.
@@ -75,64 +81,44 @@ module Templates =
                 | Ok h -> Some h
                 | Error _ -> None
 
-            // Try and get the resource preview version hash.
-            // If the blob is Blob.Stream and stream is not seekable this will return None.
-            // Which means a new version will always be created.
-            let pvh =
-                newVersion.PreviewResourceVersion
-                |> Option.bind (fun prv ->
-                    match prv.ResourceBlob.TryGetHash() with
-                    | Ok h -> Some h
-                    | Error _ -> None)
-
             // Check if there has been any changes.
             // This will mean individual changes might need to be checked again.
             // However this is ok because it makes things a bit simpler.
-            match
-                [ prevResourceHash, rvh
-                  prevPreviewResourceHash, pvh
-                  Some lv.Url, Some newVersion.Url
-                  lv.PreviewUrl, newVersion.PreviewUrl
-                  lv.ThanksHtml, newVersion.ThanksHtml ]
-                |> ``optional strings have changed``
-            with
+            match ``optional string has changed`` prevResourceHash rvh with
             | true ->
                 // Add (if needed) a new version of the resource blob.
                 let resourceVersionId =
-                    match ``optional string has changed`` prevResourceHash rvh with
-                    | true ->
-                        match Resources.exists ctx newVersion.ResourceVersion.ResourceId with
-                        | true -> ()
-                        | false ->
-                            match
-                                Resources.add
-                                    ctx
-                                    { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
-                                      Name = newVersion.ResourceVersion.ResourceId
-                                      Bucket = ResourceBuckets.images }
-                            with
-                            | AddResult.Success id -> ()
-                            | AddResult.NoChange id -> ()
-                            | AddResult.AlreadyExists id -> ()
-                            | AddResult.MissingRelatedEntity(entityType, id) ->
-                                // TODO handle
-                                failwith "todo"
-                            | AddResult.Failure(message, ``exception``) ->
-                                // TODO handle
-                                failwith "todo"
-
-
-                        match newVersion.ResourceVersion |> Resources.addVersion ctx false with
-                        | AddResult.Success id -> id
-                        | AddResult.NoChange id -> id
-                        | AddResult.AlreadyExists id -> id
+                    match Resources.exists ctx newVersion.ResourceVersion.ResourceId with
+                    | true -> ()
+                    | false ->
+                        match
+                            Resources.add
+                                ctx
+                                { Id = IdType.Specific newVersion.ResourceVersion.ResourceId
+                                  Name = newVersion.ResourceVersion.ResourceId
+                                  Bucket = ResourceBuckets.images }
+                        with
+                        | AddResult.Success id -> ()
+                        | AddResult.NoChange id -> ()
+                        | AddResult.AlreadyExists id -> ()
                         | AddResult.MissingRelatedEntity(entityType, id) ->
                             // TODO handle
                             failwith "todo"
                         | AddResult.Failure(message, ``exception``) ->
                             // TODO handle
                             failwith "todo"
-                    | false -> lv.ResourceVersionId
+
+
+                    match newVersion.ResourceVersion |> Resources.addVersion ctx false with
+                    | AddResult.Success id -> id
+                    | AddResult.NoChange id -> id
+                    | AddResult.AlreadyExists id -> id
+                    | AddResult.MissingRelatedEntity(entityType, id) ->
+                        // TODO handle
+                        failwith "todo"
+                    | AddResult.Failure(message, ``exception``) ->
+                        // TODO handle
+                        failwith "todo"
 
                 let previewResourceVersionId =
                     match ``optional string has changed`` prevResourceHash rvh with
@@ -270,4 +256,3 @@ module Templates =
                         PreviewResourceVersionId = iv.PreviewResourceVersionId }
                      : ExportImageVersionListItem)) }
             : ExportImageListItem))
-
