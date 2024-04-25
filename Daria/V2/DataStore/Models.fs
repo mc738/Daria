@@ -179,7 +179,17 @@ module Models =
           Version: int
           ResourceVersionId: string
           PreviewResourceVersionId: string option }
+        
+    type ExportTemplateListItem =
+        { Id: string
+          Name: string
+          Versions: ExportTemplateVersionListItem list }
 
+    and ExportTemplateVersionListItem =
+        { Id: string
+          Version: int
+          ResourceVersionId: string }
+    
     type ArticleLink =
         { Title: string
           Description: string
