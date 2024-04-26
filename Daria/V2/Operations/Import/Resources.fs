@@ -250,7 +250,8 @@ module Resources =
             ({ ImageResults = rm.Images |> List.map (importImage ctx settings.ResourcesRoot)
                ResourceBucketResults =
                  rm.ResourceBuckets
-                 |> List.collect (importResourceBuckets ctx settings.ResourcesRoot) }
+                 |> List.collect (importResourceBuckets ctx settings.ResourcesRoot)
+               ExternalTemplatesResults = rm.ExternalTemplates |> List.map (importExternalTemplate ctx) }
             : ImportResourcesSuccessResult)
             |> ImportResourcesResult.Success
         | Error e -> ImportResourcesResult.Failure(e, None)
