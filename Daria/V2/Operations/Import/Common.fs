@@ -33,8 +33,9 @@ module Common =
     and ImportResourcesSuccessResult = {
         ImageResults: ImportResult list
         ResourceBucketResults: ImportResult list
+        ExternalTemplatesResults: ImportResult list
     }
-
+    
     and ImportActionResults =
         { Directories: ImportDirectoryResult list
           Resources: ImportResourcesResult }
