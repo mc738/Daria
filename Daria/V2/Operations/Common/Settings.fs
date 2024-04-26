@@ -154,7 +154,9 @@ module Settings =
             | Some n, Some rp, Ok ats, Ok sts, Ok its, Ok pre, Ok pos ->
                 { Name = n
                   RootPath = rp
-                  ClearDirectoryBeforeBuild = failwith "todo"
+                  ClearDirectoryBeforeBuild =
+                    Json.tryGetBoolProperty "clearDirectoryBeforeBuild" json
+                    |> Option.defaultValue false
                   ArticlesTemplateSource = ats
                   SeriesTemplateSource = sts
                   IndexTemplateSource = its
