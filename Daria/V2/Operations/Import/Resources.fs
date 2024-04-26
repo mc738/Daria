@@ -195,7 +195,7 @@ module Resources =
                    Result = AddResult.Failure($"File `{f}` not found", None) }
                 : ImportResult))
 
-    let rec importResourceBuckets (ctx: SqliteContext) (rootPath: string) (item: ResourceBucketManifestItem) =
+    let importResourceBuckets (ctx: SqliteContext) (rootPath: string) (item: ResourceBucketManifestItem) =
         let dirPath = Path.Combine(rootPath, item.Directory)
 
         match item.Recursive with
@@ -209,9 +209,6 @@ module Resources =
                       |> List.collect id ]
             handler dirPath
         | false -> importResourcesFromDirectory ctx dirPath item.Bucket
-
-
-
 
     let importResources (ctx: SqliteContext) (settings: ImportSettings) =
         match
