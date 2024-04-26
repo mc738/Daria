@@ -234,8 +234,8 @@ module Resources =
                                TemplateId = item.Name
                                ResourceVersion = nrv }
                             : NewTemplateVersion) }
-                | AddResult.MissingRelatedEntity(entityType, id) as result -> { Path = f; Result = result }
-                | AddResult.Failure(message, ``exception``) as result -> { Path = f; Result = result }
+                | AddResult.MissingRelatedEntity(entityType, id) as result -> { Path = item.Path; Result = result }
+                | AddResult.Failure(message, ``exception``) as result -> { Path = item.Path; Result = result }
         | false ->
             ({ Path = item.Path
                Result = AddResult.Failure($"File `{item.Path}` not found", None) }
