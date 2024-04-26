@@ -1,5 +1,7 @@
 ﻿namespace Daria.V2.DataStore
 
+open Daria.V2.DataStore.Models
+
 module Templates =
 
     open System
@@ -178,7 +180,6 @@ module Templates =
                  |> List.map (fun iv ->
                      ({ Id = iv.Id
                         Version = iv.Version
-                        ResourceVersionId = iv.ResourceVersionId
-                        PreviewResourceVersionId = iv.PreviewResourceVersionId }
-                     : ExportImageVersionListItem)) }
-            : ExportImageListItem))
+                        ResourceVersionId = iv.ResourceVersionId }
+                     : ExportTemplateVersionListItem)) }
+            : ExportTemplateListItem))
