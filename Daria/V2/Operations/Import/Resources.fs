@@ -207,8 +207,39 @@ module Resources =
                       |> List.ofSeq
                       |> List.map handler
                       |> List.collect id ]
+
             handler dirPath
         | false -> importResourcesFromDirectory ctx dirPath item.Bucket
+
+    let importExternalTemplate (ctx: SqliteContext) (item: ExternalTemplateManifestItem) =
+        match File.Exists item.Path with
+        | true ->
+            match tryCreateResourceVersion item.Path with
+            | Some nrv ->
+                match
+                    Templates.add
+                        ctx
+                        ({ Id = IdType.Specific item.Name
+                           Name = item.Name }
+                        : NewTemplate)
+                with
+                | AddResult.Success id
+                | AddResult.NoChange id
+                | AddResult.AlreadyExists id ->
+                    { Path = item.Path
+                      Result =
+                        Templates.addVersion
+                            ctx
+                            ({ Id = IdType.Generated
+                               TemplateId = item.Name
+                               ResourceVersion = nrv }
+                            : NewTemplateVersion) }
+                | AddResult.MissingRelatedEntity(entityType, id) as result -> { Path = f; Result = result }
+                | AddResult.Failure(message, ``exception``) as result -> { Path = f; Result = result }
+        | false ->
+            ({ Path = item.Path
+               Result = AddResult.Failure($"File `{item.Path}` not found", None) }
+            : ImportResult)
 
     let importResources (ctx: SqliteContext) (settings: ImportSettings) =
         match
