@@ -1,5 +1,7 @@
 ﻿namespace Daria.V2.Operations.Build
 
+open Daria.V2.Operations.Common
+
 [<AutoOpen>]
 module Impl =
 
@@ -8,8 +10,39 @@ module Impl =
     open Freql.Sqlite
     open Daria.V2.DataStore
     open Daria.V2.Operations.Build.PageRenderer
-    
-    let run storePath =
+
+    [<RequireQualifiedAccess>]
+    type BuildOperationResult =
+        | Success
+        | Failure of BuildOperationFailure
+
+    and BuildOperationFailure =
+        | SettingsError of Message: string
+        | ProfileNotFound of ProfileName: string
+        
+
+    let run (settingsPath: string) (profile: string) =
+        match OperationSettings.Load settingsPath with
+        | Ok settings ->
+            match settings.Build.Profiles |> List.tryFind (fun bp -> bp.Name = profile) with
+            | Some profile -> BuildOperationResult.Success
+            | None -> BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
+        | Error e ->
+            BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
+
+        
+        
+
+        OperationSettings.Load settingsPath
+        |> Result.bind (fun settings ->
+
+
+            ())
+        |> Result.map (fun (settings, profile) ->
+
+
+            ())
+
         use ctx = SqliteContext.Open storePath
 
         let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
@@ -33,6 +66,5 @@ module Impl =
         Index.renderIndex ctx indexTemplate rootPath
 
         ExportResources.exportImages ctx rootPath
-    
-    ()
 
+    ()
