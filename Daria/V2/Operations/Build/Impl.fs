@@ -1,6 +1,7 @@
 ﻿namespace Daria.V2.Operations.Build
 
 open System
+open Daria.V2.DataStore.Persistence
 open Daria.V2.Operations.Common
 
 [<AutoOpen>]
@@ -17,6 +18,9 @@ module Impl =
         | StoreFailure of Path: string
         | ProfileNotFound of ProfileName: string
         | LoadTemplateSourceFailure of Message: string * Exception: Exception option
+        | PreBuildFailure of Message: string * Exception: Exception option
+        | BuildFailure of Message: string * Exception: Exception option
+        | PostBuildFailure of Message: string * Exception: Exception option
         | UnhandledException of Message: string * Exception: Exception
 
     let ``load settings and get profile`` (settingsPath: string) (profile: string) =
@@ -31,18 +35,101 @@ module Impl =
         try
             match template with
             | BuildTemplateSource.Store(id, version) ->
-                Templates.getLatestVersion ctx 
-
-
-                failwith "todo"
+                match version with
+                | ItemVersion.Latest -> Templates.getLatestVersionExportListItem ctx id
+                | ItemVersion.Specific version -> Templates.getSpecificVersionExportListItem ctx id version
+                |> Option.bind (fun tv -> Resources.fetchVersionDataAsUtf8 ctx tv.ResourceVersionId)
+                |> function
+                    | Some t -> Ok t
+                    | None ->
+                        BuildOperationFailure.LoadTemplateSourceFailure(
+                            $"Template `{id}` not found or could not be loaded",
+                            None
+                        )
+                        |> Error
             | BuildTemplateSource.File path ->
                 match File.Exists path with
                 | true -> File.ReadAllText path |> Ok
-                | false -> BuildOperationFailure.LoadTemplateSourceFailure($"File `{path}` not found", None) |> Error
-                
+                | false ->
+                    BuildOperationFailure.LoadTemplateSourceFailure($"File `{path}` not found", None)
+                    |> Error
+
             |> Result.map Mustache.parse
         with ex ->
             BuildOperationFailure.LoadTemplateSourceFailure(ex.Message, Some ex) |> Error
+
+    type BuildContext =
+        { StoreContext: SqliteContext
+          Settings: OperationSettings
+          Profile: BuildProfileSettings
+          Templates: Templates }
+
+    and Templates =
+        { Articles: Mustache.Token list
+          Series: Mustache.Token list
+          Index: Mustache.Token list }
+
+    let runBuildStep (ctx: SqliteContext) (buildStep: BuildStep) = ()
+
+    let createBuildContext (ctx: SqliteContext) (settings: OperationSettings) (profile: BuildProfileSettings) =
+        match
+            loadPageTemplate ctx profile.ArticlesTemplateSource,
+            loadPageTemplate ctx profile.SeriesTemplateSource,
+            loadPageTemplate ctx profile.IndexTemplateSource
+        with
+        | Ok articleTemplate, Ok seriesTemplate, Ok indexTemplate ->
+
+            { StoreContext = ctx
+              Settings = settings
+              Profile = profile
+              Templates =
+                { Articles = articleTemplate
+                  Series = seriesTemplate
+                  Index = indexTemplate } }
+            |> Ok
+        | Error e, _, _
+        | _, Error e, _
+        | _, _, Error e -> Error e
+
+    let runPreBuildSteps (buildContext: BuildContext) =
+        try
+
+            Ok()
+        with ex ->
+            BuildOperationFailure.PreBuildFailure(ex.Message, Some ex) |> Error
+
+    let build (ctx: BuildContext) =
+        try
+            // Run pre build steps
+
+            Series.getTopLevelRenderableSeries ctx.StoreContext
+            |> List.iter (
+                Series.renderSeries
+                    ctx.StoreContext
+                    ctx.Templates.Articles
+                    ctx.Templates.Series
+                    1
+                    ctx.Profile.Url
+                    ctx.Profile.RootPath
+            )
+
+            Index.renderIndex ctx.StoreContext ctx.Templates.Articles ctx.Profile.RootPath
+
+            ExportResources.exportImages ctx.StoreContext ctx.Profile.RootPath
+
+            // Result post build steps
+
+            Ok()
+        with ex ->
+            BuildFailure(ex.Message, Some ex) |> Error
+
+
+    let runPostBuildSteps (buildContext: BuildContext) =
+        try
+
+            Ok()
+        with ex ->
+            BuildOperationFailure.PostBuildFailure(ex.Message, Some ex) |> Error
 
     let run (settingsPath: string) (profile: string) =
         try
@@ -52,43 +139,13 @@ module Impl =
                 | true ->
                     use ctx = SqliteContext.Open settings.Common.StorePath
 
-
-
-
-                    Ok()
+                    match createBuildContext ctx settings profile with
+                    | Ok buildCtx ->
+                        // Run pre build steps
+                        runPreBuildSteps buildCtx
+                        |> Result.bind (fun _ -> build buildCtx)
+                        |> Result.bind (fun _ -> runPostBuildSteps buildCtx)
+                    | Error e -> Error e
                 | false -> BuildOperationFailure.StoreFailure settings.Common.StorePath |> Error)
-
-            match OperationSettings.Load settingsPath with
-            | Ok settings ->
-                match settings.Build.Profiles |> List.tryFind (fun bp -> bp.Name = profile) with
-                | Some profile ->
-                    use ctx = SqliteContext.Open storePath
-
-                    let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
-                    let url = "https://blog.psionic.cloud/"
-
-                    let pageTemplate =
-                        File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache"
-                        |> Mustache.parse
-
-                    let seriesIndexTemplate =
-                        File.ReadAllText
-                            "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache"
-                        |> Mustache.parse
-
-                    let indexTemplate =
-                        File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache"
-                        |> Mustache.parse
-
-                    Series.getTopLevelRenderableSeries ctx
-                    |> List.iter (Series.renderSeries ctx pageTemplate seriesIndexTemplate 1 url rootPath)
-
-                    Index.renderIndex ctx indexTemplate rootPath
-
-                    ExportResources.exportImages ctx rootPath
-
-                    BuildOperationResult.Success
-                | None -> BuildOperationFailure.ProfileNotFound profile |> BuildOperationResult.Failure
-            | Error e -> BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
         with ex ->
             Error(BuildOperationFailure.UnhandledException(ex.Message, ex))
