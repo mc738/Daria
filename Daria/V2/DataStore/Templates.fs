@@ -20,24 +20,36 @@ module Templates =
                 [ "WHERE template_id = @0 AND version = @1" ]
                 [ templateId; version ]
 
-        let fetchLatestVersion (ctx: SqliteContext) (imageId: string) =
+        let fetchLatestVersion (ctx: SqliteContext) (templateId: string) =
             Operations.selectTemplateVersionRecord
                 ctx
                 [ "WHERE template_id = @0"; "ORDER BY version DESC"; "LIMIT 1" ]
-                [ imageId ]
+                [ templateId ]
 
         let all (ctx: SqliteContext) =
             Operations.selectTemplateRecords ctx [] []
 
 
-        let allVersionsForImageId (ctx: SqliteContext) (imageId: string) =
-            Operations.selectTemplateVersionRecords ctx [ "WHERE image_id = @0" ] [ imageId ]
+        let allVersionsForTemplateId (ctx: SqliteContext) (imageId: string) =
+            Operations.selectTemplateVersionRecords ctx [ "WHERE template_id = @0" ] [ imageId ]
 
-    let getLatestVersion (ctx: SqliteContext) (imageId: string) =
+    let getLatestVersionExportListItem (ctx: SqliteContext) (templateId: string) =
+        Internal.fetchLatestVersion ctx templateId
+        |> Option.map (fun tv ->
+            ({ Id = tv.Id
+               Version = tv.Version
+               ResourceVersionId = tv.ResourceVersionId }
+            : ExportTemplateVersionListItem))
+
+    let getSpecificVersionExportListItem (ctx: SqliteContext) (templateId: string) (version: int) =
+        Internal.fetchSpecificVersion ctx templateId version
+        |> Option.map (fun tv ->
+            ({ Id = tv.Id
+               Version = tv.Version
+               ResourceVersionId = tv.ResourceVersionId }
+            : ExportTemplateVersionListItem))
 
 
-
-        ()
 
 
     let versionExists (ctx: SqliteContext) (versionId: string) =
