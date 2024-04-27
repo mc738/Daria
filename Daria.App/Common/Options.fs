@@ -12,15 +12,17 @@ module Options =
         | [<CommandValue("build")>] Build of BuildOptions
 
     and ImportOptions =
-        { [<ArgValue("-p", "--path")>]
+        { [<ArgValue("-s", "--settings")>]
           SettingsPath: string
           [<ArgValue("-v", "--verbose")>]
           Verbose: bool }
         
     and BuildOptions =
         {
-            [<ArgValue("-s", "--datastore")>]
-            DataStorePath: string
+            [<ArgValue("-s", "--settings")>]
+            SettingPath: string
+            [<ArgValue("-p", "--profile")>]
+            ProfileName: string
         }
 
 
