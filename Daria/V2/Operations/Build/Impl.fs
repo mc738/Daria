@@ -1,5 +1,6 @@
 ﻿namespace Daria.V2.Operations.Build
 
+open System
 open Daria.V2.Operations.Common
 
 [<AutoOpen>]
@@ -13,8 +14,9 @@ module Impl =
 
     type BuildOperationFailure =
         | SettingsError of Message: string
-        | StoreNotFound of Path: string
+        | StoreFailure of Path: string
         | ProfileNotFound of ProfileName: string
+        | UnhandledException of Message: string * Exception: Exception
 
     let ``load settings and get profile`` (settingsPath: string) (profile: string) =
         match OperationSettings.Load settingsPath with
@@ -25,36 +27,47 @@ module Impl =
         | Error e -> BuildOperationFailure.SettingsError e |> Error
 
     let run (settingsPath: string) (profile: string) =
-        ``load settings and get profile`` settingsPath profile
-        
-        match OperationSettings.Load settingsPath with
-        | Ok settings ->
-            match settings.Build.Profiles |> List.tryFind (fun bp -> bp.Name = profile) with
-            | Some profile ->
-                use ctx = SqliteContext.Open storePath
+        try
+            ``load settings and get profile`` settingsPath profile
+            |> Result.bind (fun (settings, profile) ->
+                match File.Exists settings.Common.StorePath with
+                | true ->
 
-                let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
-                let url = "https://blog.psionic.cloud/"
 
-                let pageTemplate =
-                    File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache"
-                    |> Mustache.parse
+                    Ok()
+                | false -> BuildOperationFailure.StoreFailure settings.Common.StorePath |> Error)
 
-                let seriesIndexTemplate =
-                    File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache"
-                    |> Mustache.parse
+            match OperationSettings.Load settingsPath with
+            | Ok settings ->
+                match settings.Build.Profiles |> List.tryFind (fun bp -> bp.Name = profile) with
+                | Some profile ->
+                    use ctx = SqliteContext.Open storePath
 
-                let indexTemplate =
-                    File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache"
-                    |> Mustache.parse
+                    let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
+                    let url = "https://blog.psionic.cloud/"
 
-                Series.getTopLevelRenderableSeries ctx
-                |> List.iter (Series.renderSeries ctx pageTemplate seriesIndexTemplate 1 url rootPath)
+                    let pageTemplate =
+                        File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache"
+                        |> Mustache.parse
 
-                Index.renderIndex ctx indexTemplate rootPath
+                    let seriesIndexTemplate =
+                        File.ReadAllText
+                            "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache"
+                        |> Mustache.parse
 
-                ExportResources.exportImages ctx rootPath
+                    let indexTemplate =
+                        File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache"
+                        |> Mustache.parse
 
-                BuildOperationResult.Success
-            | None -> BuildOperationFailure.ProfileNotFound profile |> BuildOperationResult.Failure
-        | Error e -> BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
+                    Series.getTopLevelRenderableSeries ctx
+                    |> List.iter (Series.renderSeries ctx pageTemplate seriesIndexTemplate 1 url rootPath)
+
+                    Index.renderIndex ctx indexTemplate rootPath
+
+                    ExportResources.exportImages ctx rootPath
+
+                    BuildOperationResult.Success
+                | None -> BuildOperationFailure.ProfileNotFound profile |> BuildOperationResult.Failure
+            | Error e -> BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
+        with ex ->
+            Error(BuildOperationFailure.UnhandledException(ex.Message, ex))
