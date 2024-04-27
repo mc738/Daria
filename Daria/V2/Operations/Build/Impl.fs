@@ -17,11 +17,15 @@ module Impl =
         | SettingsError of Message: string
         | StoreFailure of Path: string
         | ProfileNotFound of ProfileName: string
-        | LoadTemplateSourceFailure of Message: string * Exception: Exception option
-        | PreBuildFailure of Message: string * Exception: Exception option
-        | BuildFailure of Message: string * Exception: Exception option
-        | PostBuildFailure of Message: string * Exception: Exception option
-        | UnhandledException of Message: string * Exception: Exception
+        | LoadTemplateSourceFailure of OperationFailure
+        | PreBuildFailure of OperationFailure
+        | BuildFailure of OperationFailure
+        | PostBuildFailure of OperationFailure
+        | UnhandledException of Exception
+
+    and OperationFailure =
+        { Message: string
+          Exception: Exception option }
 
     let ``load settings and get profile`` (settingsPath: string) (profile: string) =
         match OperationSettings.Load settingsPath with
@@ -43,20 +47,25 @@ module Impl =
                     | Some t -> Ok t
                     | None ->
                         BuildOperationFailure.LoadTemplateSourceFailure(
-                            $"Template `{id}` not found or could not be loaded",
-                            None
+                            { Message = "Template `{id}` not found or could not be loaded"
+                              Exception = None }
                         )
                         |> Error
             | BuildTemplateSource.File path ->
                 match File.Exists path with
                 | true -> File.ReadAllText path |> Ok
                 | false ->
-                    BuildOperationFailure.LoadTemplateSourceFailure($"File `{path}` not found", None)
+                    BuildOperationFailure.LoadTemplateSourceFailure
+                        { Message = $"File `{path}` not found"
+                          Exception = None }
                     |> Error
 
             |> Result.map Mustache.parse
         with ex ->
-            BuildOperationFailure.LoadTemplateSourceFailure(ex.Message, Some ex) |> Error
+            BuildOperationFailure.LoadTemplateSourceFailure
+                { Message = ex.Message
+                  Exception = Some ex }
+            |> Error
 
     type BuildContext =
         { StoreContext: SqliteContext
@@ -68,8 +77,6 @@ module Impl =
         { Articles: Mustache.Token list
           Series: Mustache.Token list
           Index: Mustache.Token list }
-
-    let runBuildStep (ctx: SqliteContext) (buildStep: BuildStep) = ()
 
     let createBuildContext (ctx: SqliteContext) (settings: OperationSettings) (profile: BuildProfileSettings) =
         match
@@ -91,12 +98,35 @@ module Impl =
         | _, Error e, _
         | _, _, Error e -> Error e
 
+    let runBuildStep (ctx: BuildContext) (buildStep: BuildStep) =
+        match buildStep with
+        | BuildStep.CreateDirectory directoryStep ->
+            Path.Combine(ctx.Profile.RootPath, directoryStep.Name)
+            |> Directory.CreateDirectory
+            |> ignore
+            |> Ok
+        | BuildStep.CopyFile copyFileStep ->
+
+            failwith "todo"
+        | BuildStep.ExportImages exportImagesStep ->
+            ExportResources.exportImages ctx.StoreContext ctx.Profile.RootPath exportImagesStep.OutputDirectoryName
+            |> Ok
+        | BuildStep.ExportResourceBucket exportResourceBucketStep ->
+
+
+            failwith "todo"
+        | BuildStep.CreateArtifact -> failwith "todo"
+        | BuildStep.UploadArtifact -> failwith "todo"
+
     let runPreBuildSteps (buildContext: BuildContext) =
         try
 
             Ok()
         with ex ->
-            BuildOperationFailure.PreBuildFailure(ex.Message, Some ex) |> Error
+            BuildOperationFailure.PreBuildFailure
+                { Message = ex.Message
+                  Exception = Some ex }
+            |> Error
 
     let build (ctx: BuildContext) =
         try
@@ -115,13 +145,14 @@ module Impl =
 
             Index.renderIndex ctx.StoreContext ctx.Templates.Articles ctx.Profile.RootPath
 
-            ExportResources.exportImages ctx.StoreContext ctx.Profile.RootPath
-
             // Result post build steps
 
             Ok()
         with ex ->
-            BuildFailure(ex.Message, Some ex) |> Error
+            BuildFailure
+                { Message = ex.Message
+                  Exception = Some ex }
+            |> Error
 
 
     let runPostBuildSteps (buildContext: BuildContext) =
@@ -129,7 +160,10 @@ module Impl =
 
             Ok()
         with ex ->
-            BuildOperationFailure.PostBuildFailure(ex.Message, Some ex) |> Error
+            BuildOperationFailure.PostBuildFailure
+                { Message = ex.Message
+                  Exception = Some ex }
+            |> Error
 
     let run (settingsPath: string) (profile: string) =
         try
@@ -148,4 +182,4 @@ module Impl =
                     | Error e -> Error e
                 | false -> BuildOperationFailure.StoreFailure settings.Common.StorePath |> Error)
         with ex ->
-            Error(BuildOperationFailure.UnhandledException(ex.Message, ex))
+            Error(BuildOperationFailure.UnhandledException ex)
