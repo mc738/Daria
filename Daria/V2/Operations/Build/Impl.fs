@@ -11,60 +11,50 @@ module Impl =
     open Daria.V2.DataStore
     open Daria.V2.Operations.Build.PageRenderer
 
-    [<RequireQualifiedAccess>]
-    type BuildOperationResult =
-        | Success
-        | Failure of BuildOperationFailure
-
-    and BuildOperationFailure =
+    type BuildOperationFailure =
         | SettingsError of Message: string
+        | StoreNotFound of Path: string
         | ProfileNotFound of ProfileName: string
-        
 
-    let run (settingsPath: string) (profile: string) =
+    let ``load settings and get profile`` (settingsPath: string) (profile: string) =
         match OperationSettings.Load settingsPath with
         | Ok settings ->
             match settings.Build.Profiles |> List.tryFind (fun bp -> bp.Name = profile) with
-            | Some profile -> BuildOperationResult.Success
-            | None -> BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
-        | Error e ->
-            BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
+            | Some profile -> Ok(settings, profile)
+            | None -> BuildOperationFailure.ProfileNotFound profile |> Error
+        | Error e -> BuildOperationFailure.SettingsError e |> Error
 
+    let run (settingsPath: string) (profile: string) =
+        ``load settings and get profile`` settingsPath profile
         
-        
+        match OperationSettings.Load settingsPath with
+        | Ok settings ->
+            match settings.Build.Profiles |> List.tryFind (fun bp -> bp.Name = profile) with
+            | Some profile ->
+                use ctx = SqliteContext.Open storePath
 
-        OperationSettings.Load settingsPath
-        |> Result.bind (fun settings ->
+                let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
+                let url = "https://blog.psionic.cloud/"
 
+                let pageTemplate =
+                    File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache"
+                    |> Mustache.parse
 
-            ())
-        |> Result.map (fun (settings, profile) ->
+                let seriesIndexTemplate =
+                    File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache"
+                    |> Mustache.parse
 
+                let indexTemplate =
+                    File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache"
+                    |> Mustache.parse
 
-            ())
+                Series.getTopLevelRenderableSeries ctx
+                |> List.iter (Series.renderSeries ctx pageTemplate seriesIndexTemplate 1 url rootPath)
 
-        use ctx = SqliteContext.Open storePath
+                Index.renderIndex ctx indexTemplate rootPath
 
-        let rootPath = "C:\\ProjectData\\Articles\\_rendered_v2"
-        let url = "https://blog.psionic.cloud/"
+                ExportResources.exportImages ctx rootPath
 
-        let pageTemplate =
-            File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\article.mustache"
-            |> Mustache.parse
-
-        let seriesIndexTemplate =
-            File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\series_index.mustache"
-            |> Mustache.parse
-
-        let indexTemplate =
-            File.ReadAllText "C:\\Users\\44748\\Projects\\Daria\\Resources\\templates\\index.mustache"
-            |> Mustache.parse
-
-        Series.getTopLevelRenderableSeries ctx
-        |> List.iter (Series.renderSeries ctx pageTemplate seriesIndexTemplate 1 url rootPath)
-
-        Index.renderIndex ctx indexTemplate rootPath
-
-        ExportResources.exportImages ctx rootPath
-
-    ()
+                BuildOperationResult.Success
+            | None -> BuildOperationFailure.ProfileNotFound profile |> BuildOperationResult.Failure
+        | Error e -> BuildOperationFailure.SettingsError e |> BuildOperationResult.Failure
