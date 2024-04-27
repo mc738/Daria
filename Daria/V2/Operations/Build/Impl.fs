@@ -16,6 +16,7 @@ module Impl =
         | SettingsError of Message: string
         | StoreFailure of Path: string
         | ProfileNotFound of ProfileName: string
+        | LoadTemplateSourceFailure of Message: string * Exception: Exception option
         | UnhandledException of Message: string * Exception: Exception
 
     let ``load settings and get profile`` (settingsPath: string) (profile: string) =
@@ -26,12 +27,32 @@ module Impl =
             | None -> BuildOperationFailure.ProfileNotFound profile |> Error
         | Error e -> BuildOperationFailure.SettingsError e |> Error
 
+    let loadPageTemplate (ctx: SqliteContext) (template: BuildTemplateSource) =
+        try
+            match template with
+            | BuildTemplateSource.Store(id, version) ->
+                Templates.getLatestVersion ctx 
+
+
+                failwith "todo"
+            | BuildTemplateSource.File path ->
+                match File.Exists path with
+                | true -> File.ReadAllText path |> Ok
+                | false -> BuildOperationFailure.LoadTemplateSourceFailure($"File `{path}` not found", None) |> Error
+                
+            |> Result.map Mustache.parse
+        with ex ->
+            BuildOperationFailure.LoadTemplateSourceFailure(ex.Message, Some ex) |> Error
+
     let run (settingsPath: string) (profile: string) =
         try
             ``load settings and get profile`` settingsPath profile
             |> Result.bind (fun (settings, profile) ->
                 match File.Exists settings.Common.StorePath with
                 | true ->
+                    use ctx = SqliteContext.Open settings.Common.StorePath
+
+
 
 
                     Ok()
