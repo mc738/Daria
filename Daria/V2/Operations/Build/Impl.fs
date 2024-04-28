@@ -1,6 +1,7 @@
 ﻿namespace Daria.V2.Operations.Build
 
 open System
+open System.IO
 open Daria.V2.DataStore.Persistence
 open Daria.V2.Operations.Common
 
@@ -99,29 +100,41 @@ module Impl =
         | _, _, Error e -> Error e
 
     let runBuildStep (ctx: BuildContext) (buildStep: BuildStep) =
-        match buildStep with
-        | BuildStep.CreateDirectory directoryStep ->
-            Path.Combine(ctx.Profile.RootPath, directoryStep.Name)
-            |> Directory.CreateDirectory
-            |> ignore
-            |> Ok
-        | BuildStep.CopyFile copyFileStep ->
-
-            failwith "todo"
-        | BuildStep.ExportImages exportImagesStep ->
-            ExportResources.exportImages ctx.StoreContext ctx.Profile.RootPath exportImagesStep.OutputDirectoryName
-            |> Ok
-        | BuildStep.ExportResourceBucket exportResourceBucketStep ->
-
-
-            failwith "todo"
-        | BuildStep.CreateArtifact -> failwith "todo"
-        | BuildStep.UploadArtifact -> failwith "todo"
+        try
+            match buildStep with
+            | BuildStep.CreateDirectory directoryStep ->
+                Path.Combine(ctx.Profile.RootPath, directoryStep.Name)
+                |> Directory.CreateDirectory
+                |> ignore
+                |> Ok
+            | BuildStep.CopyFile copyFileStep -> failwith "todo"
+            | BuildStep.ExportImages exportImagesStep ->
+                ExportResources.exportImages ctx.StoreContext ctx.Profile.RootPath exportImagesStep.OutputDirectoryName
+                |> Ok
+            | BuildStep.ExportResourceBucket exportResourceBucketStep ->
+                ExportResources.exportResourceBucket
+                    ctx.StoreContext
+                    exportResourceBucketStep.BucketName
+                    ctx.Profile.RootPath
+                    exportResourceBucketStep.OutputDirectoryName
+                |> Ok
+            | BuildStep.CreateArtifact -> failwith "todo"
+            | BuildStep.UploadArtifact -> failwith "todo"
+        with ex ->
+            Error
+                { Message = ex.Message
+                  Exception = Some ex }
 
     let runPreBuildSteps (buildContext: BuildContext) =
         try
-
-            Ok()
+            buildContext.Profile.PreBuildSteps
+            |> List.fold
+                (fun r s ->
+                    match r with
+                    | Ok _ -> runBuildStep buildContext s
+                    | Error e -> Error e)
+                (Ok())
+            |> Result.mapError BuildOperationFailure.PreBuildFailure
         with ex ->
             BuildOperationFailure.PreBuildFailure
                 { Message = ex.Message
@@ -143,9 +156,7 @@ module Impl =
                     ctx.Profile.RootPath
             )
 
-            Index.renderIndex ctx.StoreContext ctx.Templates.Articles ctx.Profile.RootPath
-
-            // Result post build steps
+            Index.renderIndex ctx.StoreContext ctx.Templates.Index ctx.Profile.RootPath
 
             Ok()
         with ex ->
@@ -157,8 +168,14 @@ module Impl =
 
     let runPostBuildSteps (buildContext: BuildContext) =
         try
-
-            Ok()
+            buildContext.Profile.PostBuildSteps
+            |> List.fold
+                (fun r s ->
+                    match r with
+                    | Ok _ -> runBuildStep buildContext s
+                    | Error e -> Error e)
+                (Ok())
+            |> Result.mapError BuildOperationFailure.PostBuildFailure
         with ex ->
             BuildOperationFailure.PostBuildFailure
                 { Message = ex.Message
@@ -175,6 +192,10 @@ module Impl =
 
                     match createBuildContext ctx settings profile with
                     | Ok buildCtx ->
+                        if profile.ClearDirectoryBeforeBuild then
+                            Directory.Delete(profile.RootPath, true)
+                            Directory.CreateDirectory(profile.RootPath) |> ignore
+
                         // Run pre build steps
                         runPreBuildSteps buildCtx
                         |> Result.bind (fun _ -> build buildCtx)
