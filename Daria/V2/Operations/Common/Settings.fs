@@ -56,7 +56,6 @@ module Settings =
             | Some sp -> { StorePath = sp } |> Ok
             | None -> Error "Missing `storePath` property"
 
-
     and ImportSettings =
         { ArticlesRoot: string
           ResourcesRoot: string
@@ -124,6 +123,7 @@ module Settings =
     and BuildProfileSettings =
         { Name: string
           RootPath: string
+          Url: string
           ClearDirectoryBeforeBuild: bool
           ArticlesTemplateSource: BuildTemplateSource
           SeriesTemplateSource: BuildTemplateSource
@@ -135,6 +135,7 @@ module Settings =
             match
                 Json.tryGetStringProperty "name" json,
                 Json.tryGetStringProperty "rootPath" json,
+                Json.tryGetStringProperty "url" json,
                 Json.tryGetProperty "articlesTemplateSource" json
                 |> Option.map BuildTemplateSource.TryFromJson
                 |> Option.defaultValue (Error "Missing `articlesTemplateSource` property"),
@@ -151,9 +152,10 @@ module Settings =
                 |> Option.map (List.map BuildStep.TryFromJson >> resultCollect)
                 |> Option.defaultValue (Ok [])
             with
-            | Some n, Some rp, Ok ats, Ok sts, Ok its, Ok pre, Ok pos ->
+            | Some n, Some rp, Some url, Ok ats, Ok sts, Ok its, Ok pre, Ok pos ->
                 { Name = n
                   RootPath = rp
+                  Url = url
                   ClearDirectoryBeforeBuild =
                     Json.tryGetBoolProperty "clearDirectoryBeforeBuild" json
                     |> Option.defaultValue false
@@ -163,13 +165,14 @@ module Settings =
                   PreBuildSteps = pre
                   PostBuildSteps = pos }
                 |> Ok
-            | None, _, _, _, _, _, _ -> Error "Missing `name` property"
-            | _, None, _, _, _, _, _ -> Error "Missing `rootPath` property"
-            | _, _, Error e, _, _, _, _ -> Error e
-            | _, _, _, Error e, _, _, _ -> Error e
-            | _, _, _, _, Error e, _, _ -> Error e
-            | _, _, _, _, _, Error e, _ -> Error e
-            | _, _, _, _, _, _, Error e -> Error e
+            | None, _, _, _, _, _, _, _ -> Error "Missing `name` property"
+            | _, None, _, _, _, _, _, _ -> Error "Missing `rootPath` property"
+            | _, _, None, _, _, _, _, _ -> Error "Missing `url` property"
+            | _, _, _, Error e, _, _, _, _ -> Error e
+            | _, _, _, _, Error e, _, _, _ -> Error e
+            | _, _, _, _, _, Error e, _, _ -> Error e
+            | _, _, _, _, _, _, Error e, _ -> Error e
+            | _, _, _, _, _, _, _, Error e -> Error e
 
     and BuildTemplate = { Name: string }
 
