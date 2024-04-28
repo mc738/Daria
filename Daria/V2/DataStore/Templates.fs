@@ -188,7 +188,7 @@ module Templates =
             ({ Id = i.Id
                Name = i.Name
                Versions =
-                 Internal.allVersionsForImageId ctx i.Id
+                 Internal.allVersionsForTemplateId ctx i.Id
                  |> List.map (fun iv ->
                      ({ Id = iv.Id
                         Version = iv.Version
