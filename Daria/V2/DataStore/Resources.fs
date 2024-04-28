@@ -4,6 +4,7 @@
 #nowarn "100001"
 
 open System
+open System.Text
 open Daria.V2.Common.Domain
 open Daria.V2.DataStore.Common
 open Freql.Core.Common.Types
@@ -24,10 +25,7 @@ module Resources =
 
     module Internal =
 
-        type ResourceVersionListingItem =
-            { Id: string
-              Version: int
-              Hash: string }
+        type ResourceVersionListingItem with
 
             static member SelectSql() =
                 "SELECT id, version, hash FROM resource_versions"
@@ -37,6 +35,9 @@ module Resources =
                 ctx
                 [ "WHERE resource_id = @0"; "ORDER BY version DESC"; "LIMIT 1" ]
                 [ resourceId ]
+
+        let fetchSpecificVersion (ctx: SqliteContext) (versionId: string) =
+            Operations.selectResourceVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
 
         let fetchLatestVersionListing (ctx: SqliteContext) (resourceId: string) =
 
@@ -54,9 +55,38 @@ module Resources =
 
             ctx.SelectSingleAnon<ResourceVersionListingItem>(sql, [ versionId ])
 
+        let fetchByBucket (ctx: SqliteContext) (bucket: string) =
+            Operations.selectResourceRecords ctx [ "WHERE bucket = @0" ] [ bucket ]
+
+        let fetchVersionOverviews (ctx: SqliteContext) (resourceId: string) =
+            Operations.selectResourceVersionRecords ctx [ "WHERE resource_id = @0" ] [ resourceId ]
+            |> List.map (fun rv ->
+                ({ Id = rv.Id
+                   ResourceId = rv.ResourceId
+                   Version = rv.Version
+                   Hash = rv.Hash
+                   FileType = rv.FileType |> FileType.Deserialize |> Option.defaultValue FileType.Binary
+                   EncryptionType =
+                     rv.EncryptionType
+                     |> EncryptionType.Deserialize
+                     |> Option.defaultValue EncryptionType.None
+                   CompressionType =
+                     rv.CompressionType
+                     |> CompressionType.Deserialize
+                     |> Option.defaultValue CompressionType.None }
+                : ResourceVersionOverview))
+
     let fetchLatestVersionDataAsBytes (ctx: SqliteContext) (resourceId: string) =
         Internal.fetchLatestVersion ctx resourceId
-        |> Option.map (fun r -> r.RawBlob.ToString())
+        |> Option.map (fun r -> r.RawBlob.ToBytes())
+
+    let fetchVersionDataAsBytes (ctx: SqliteContext) (versionId: string) =
+        Internal.fetchSpecificVersion ctx versionId
+        |> Option.map (fun r -> r.RawBlob.ToBytes())
+
+    let fetchVersionDataAsUtf8 (ctx: SqliteContext) (versionId: string) =
+        Internal.fetchSpecificVersion ctx versionId
+        |> Option.map (fun r -> r.RawBlob.ToBytes() |> Encoding.UTF8.GetString)
 
     let versionExists (ctx: SqliteContext) (versionId: string) =
         Internal.fetchVersionListingById ctx versionId |> Option.isSome
@@ -69,7 +99,10 @@ module Resources =
 
         match exists ctx id |> not with
         | true ->
-            ({ Id = id; Name = newResource.Name; Bucket = newResource.Bucket }: Parameters.NewResource)
+            ({ Id = id
+               Name = newResource.Name
+               Bucket = newResource.Bucket }
+            : Parameters.NewResource)
             |> Operations.insertResource ctx
 
             AddResult.Success id
@@ -131,6 +164,13 @@ module Resources =
         Internal.fetchVersionListingById ctx resourceVersionId
         |> Option.map (fun rv -> rv.Hash)
 
+    let getBucket (ctx: SqliteContext) (bucket: string) =
+        Internal.fetchByBucket ctx bucket
+        |> List.map (fun r ->
+            ({ Id = r.Id
+               Name = r.Name
+               Versions = Internal.fetchVersionOverviews ctx r.Id }
+            : ResourceOverview))
 
     let getExportVersion (ctx: SqliteContext) (versionId: string) =
         Operations.selectResourceVersionRecord ctx [ "WHERE id = @0" ] [ versionId ]
