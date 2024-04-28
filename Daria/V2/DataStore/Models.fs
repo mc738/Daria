@@ -117,7 +117,17 @@ module Models =
           Tags: string list
           Metadata: Map<string, string> }
 
-    type ResourceVersionOverview =
+    type ResourceVersionListingItem =
+        { Id: string
+          Version: int
+          Hash: string }
+
+    type ResourceOverview =
+        { Id: string
+          Name: string
+          Versions: ResourceVersionOverview list }
+
+    and ResourceVersionOverview =
         { Id: string
           ResourceId: string
           Version: int
@@ -168,7 +178,6 @@ module Models =
           TemplateId: string
           ResourceVersion: NewResourceVersion }
 
-
     type ExportImageListItem =
         { Id: string
           Name: string
@@ -179,7 +188,7 @@ module Models =
           Version: int
           ResourceVersionId: string
           PreviewResourceVersionId: string option }
-        
+
     type ExportTemplateListItem =
         { Id: string
           Name: string
@@ -189,12 +198,11 @@ module Models =
         { Id: string
           Version: int
           ResourceVersionId: string }
-    
+
     type ArticleLink =
         { Title: string
           Description: string
           Url: string }
-
 
     type RenderableArticle =
         { Id: string
